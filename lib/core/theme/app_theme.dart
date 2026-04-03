@@ -7,6 +7,7 @@ class AppTheme {
   static const Color background = Color(0xFFF0FAF8);
   static const Color dark = Color(0xFF1A2E35);
   static const Color muted = Color(0xFF7A9BA8);
+  static const Color coral = Color(0xFFFF7F6B);
 
   static ThemeData get theme => ThemeData(
     useMaterial3: true,
