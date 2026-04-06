@@ -30,37 +30,23 @@ class MyApp extends StatelessWidget {
   }
 }
 
-class AuthWrapper extends StatefulWidget {
+class AuthWrapper extends StatelessWidget {
   const AuthWrapper({super.key});
-
-  @override
-  State<AuthWrapper> createState() => _AuthWrapperState();
-}
-
-class _AuthWrapperState extends State<AuthWrapper> {
-  final _supabase = Supabase.instance.client;
-  Future<Map<String, dynamic>?>? _prefFuture;
-  String? _userId;
 
   @override
   Widget build(BuildContext context) {
     return StreamBuilder(
-      stream: _supabase.auth.onAuthStateChange,
+      stream: Supabase.instance.client.auth.onAuthStateChange,
       builder: (context, snapshot) {
         if (snapshot.hasData) {
           final session = snapshot.data!.session;
           if (session != null) {
-            // Ne recrée la future que si l'utilisateur change
-            if (_userId != session.user.id) {
-              _userId = session.user.id;
-              _prefFuture = _supabase
+            return FutureBuilder(
+              future: Supabase.instance.client
                   .from('preferences')
                   .select()
                   .eq('id_user', session.user.id)
-                  .maybeSingle();
-            }
-            return FutureBuilder(
-              future: _prefFuture,
+                  .maybeSingle(),
               builder: (context, prefSnapshot) {
                 if (prefSnapshot.connectionState == ConnectionState.waiting) {
                   return const Scaffold(
@@ -69,11 +55,9 @@ class _AuthWrapperState extends State<AuthWrapper> {
                     ),
                   );
                 }
-                // Pas de préférences → Onboarding
                 if (prefSnapshot.data == null) {
                   return const OnboardingScreen();
                 }
-                // Préférences existantes → Accueil
                 return const HomeScreen();
               },
             );

@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:voyage_app/core/theme/app_theme.dart';
 import 'package:voyage_app/features/detail/screens/detail_screen.dart';
 import 'package:voyage_app/features/profile/screens/profile_screen.dart';
+import 'package:voyage_app/features/search/screens/search_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -554,7 +555,12 @@ class _HomeScreenState extends State<HomeScreen> {
     return BottomNavigationBar(
       currentIndex: _currentIndex,
       onTap: (i) {
-        if (i == 3) {
+        if (i == 1) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const SearchScreen()),
+          );
+        } else if (i == 3) {
           Navigator.push(
             context,
             MaterialPageRoute(builder: (_) => const ProfileScreen()),
