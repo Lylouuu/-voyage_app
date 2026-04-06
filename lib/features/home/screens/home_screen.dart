@@ -2,6 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:voyage_app/core/theme/app_theme.dart';
+import 'package:voyage_app/features/detail/screens/detail_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -26,16 +27,14 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _loadData() async {
     final user = _supabase.auth.currentUser;
     if (user != null) {
-      // Charger nom utilisateur
       final userData = await _supabase
           .from('utilisateurs')
           .select('nom')
           .eq('id', user.id)
           .single();
-      // Charger villes
       final villes = await _supabase
           .from('villes')
-          .select('*, pays(nom, continent)')
+          .select('*, pays(nom, continent, langue, monnaie, climat)')
           .order('popularite', ascending: false);
       if (mounted) {
         setState(() {
@@ -78,7 +77,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // ── HEADER ──────────────────────────────────────────────────
   Widget _buildHeader() {
     return SliverToBoxAdapter(
       child: Container(
@@ -136,7 +134,6 @@ class _HomeScreenState extends State<HomeScreen> {
               ],
             ),
             const SizedBox(height: 20),
-            // Barre de recherche
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               decoration: BoxDecoration(
@@ -167,7 +164,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // ── RECOMMANDATIONS ─────────────────────────────────────────
   Widget _buildRecommandations() {
     final top = _villes.take(5).toList();
     return SliverToBoxAdapter(
@@ -221,7 +217,13 @@ class _HomeScreenState extends State<HomeScreen> {
         : const Color(0xFFFFD97D);
 
     return GestureDetector(
-      onTap: () {},
+      // ✅ onTap corrigé
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => DetailScreen(ville: ville)),
+        );
+      },
       child: Container(
         width: 200,
         margin: const EdgeInsets.only(right: 14, bottom: 4),
@@ -239,7 +241,6 @@ class _HomeScreenState extends State<HomeScreen> {
           borderRadius: BorderRadius.circular(22),
           child: Stack(
             children: [
-              // Photo
               CachedNetworkImage(
                 imageUrl: ville['image_url'] ?? '',
                 height: 220,
@@ -260,7 +261,6 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
               ),
-              // Dégradé
               Container(
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
@@ -273,7 +273,6 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
               ),
-              // Infos
               Positioned(
                 bottom: 16,
                 left: 14,
@@ -281,7 +280,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Badge budget
                     Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 10,
@@ -352,7 +350,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // ── CONTINENTS ───────────────────────────────────────────────
   Widget _buildContinents() {
     final continents = [
       {'emoji': '🌍', 'label': 'Afrique'},
@@ -405,7 +402,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // ── TOUTES LES DESTINATIONS ──────────────────────────────────
   Widget _buildAllDestinations() {
     return SliverPadding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -426,7 +422,13 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildGridCard(Map<String, dynamic> ville) {
     return GestureDetector(
-      onTap: () {},
+      // ✅ onTap corrigé
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => DetailScreen(ville: ville)),
+        );
+      },
       child: Container(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(18),
@@ -529,7 +531,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // ── SECTION TITLE ────────────────────────────────────────────
   Widget _buildSectionTitle(String title) {
     return SliverToBoxAdapter(
       child: Padding(
@@ -546,7 +547,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // ── BOTTOM NAV ───────────────────────────────────────────────
   Widget _buildBottomNav() {
     return BottomNavigationBar(
       currentIndex: _currentIndex,

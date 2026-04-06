@@ -30,23 +30,37 @@ class MyApp extends StatelessWidget {
   }
 }
 
-class AuthWrapper extends StatelessWidget {
+class AuthWrapper extends StatefulWidget {
   const AuthWrapper({super.key});
+
+  @override
+  State<AuthWrapper> createState() => _AuthWrapperState();
+}
+
+class _AuthWrapperState extends State<AuthWrapper> {
+  final _supabase = Supabase.instance.client;
+  Future<Map<String, dynamic>?>? _prefFuture;
+  String? _userId;
 
   @override
   Widget build(BuildContext context) {
     return StreamBuilder(
-      stream: Supabase.instance.client.auth.onAuthStateChange,
+      stream: _supabase.auth.onAuthStateChange,
       builder: (context, snapshot) {
         if (snapshot.hasData) {
           final session = snapshot.data!.session;
           if (session != null) {
-            return FutureBuilder(
-              future: Supabase.instance.client
+            // Ne recrée la future que si l'utilisateur change
+            if (_userId != session.user.id) {
+              _userId = session.user.id;
+              _prefFuture = _supabase
                   .from('preferences')
                   .select()
                   .eq('id_user', session.user.id)
-                  .maybeSingle(),
+                  .maybeSingle();
+            }
+            return FutureBuilder(
+              future: _prefFuture,
               builder: (context, prefSnapshot) {
                 if (prefSnapshot.connectionState == ConnectionState.waiting) {
                   return const Scaffold(
