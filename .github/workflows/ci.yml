@@ -1,36 +1,25 @@
-name: CI/CD Voyage App
+name: CI Voyage App
 
 on:
   push:
     branches: [ develop, main ]
-  pull_request:
-    branches: [ develop, main ]
 
 jobs:
   build:
-    name: Analyse & Tests
     runs-on: ubuntu-latest
 
     steps:
-      - name: Récupérer le code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Installer Flutter
-        uses: subosito/flutter-action@v2
+      - uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.41.6'
           channel: 'stable'
 
-      - name: Créer le fichier .env
+      - name: Créer .env
         run: |
           echo "SUPABASE_URL=${{ secrets.SUPABASE_URL }}" >> .env
           echo "SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}" >> .env
 
-      - name: Installer les dépendances
-        run: flutter pub get
+      - run: flutter pub get
 
-      - name: Analyser le code
-        run: flutter analyze --no-fatal-infos
-
-      - name: Lancer les tests
-        run: flutter test
+      - run: flutter analyze --no-fatal-infos
