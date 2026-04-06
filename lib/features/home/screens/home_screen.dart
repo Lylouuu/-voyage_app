@@ -6,6 +6,7 @@ import 'package:voyage_app/features/detail/screens/detail_screen.dart';
 import 'package:voyage_app/features/profile/screens/profile_screen.dart';
 import 'package:voyage_app/features/search/screens/search_screen.dart';
 import 'package:voyage_app/features/voyage/screens/create_voyage_screen.dart';
+import 'package:voyage_app/features/voyage/screens/mes_voyages_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -598,6 +599,11 @@ class _HomeScreenState extends State<HomeScreen> {
             context,
             MaterialPageRoute(builder: (_) => const SearchScreen()),
           );
+        } else if (i == 2) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const MesVoyagesScreen()),
+          );
         } else if (i == 3) {
           Navigator.push(
             context,
@@ -625,9 +631,9 @@ class _HomeScreenState extends State<HomeScreen> {
           label: 'Explorer',
         ),
         BottomNavigationBarItem(
-          icon: Icon(Icons.favorite_outline),
-          activeIcon: Icon(Icons.favorite),
-          label: 'Favoris',
+          icon: Icon(Icons.luggage_outlined),
+          activeIcon: Icon(Icons.luggage),
+          label: 'Mes Voyages',
         ),
         BottomNavigationBarItem(
           icon: Icon(Icons.person_outline),
