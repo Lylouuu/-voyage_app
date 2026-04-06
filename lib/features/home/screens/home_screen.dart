@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:voyage_app/core/theme/app_theme.dart';
 import 'package:voyage_app/features/detail/screens/detail_screen.dart';
+import 'package:voyage_app/features/profile/screens/profile_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -55,7 +56,9 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       backgroundColor: AppTheme.background,
       bottomNavigationBar: _buildBottomNav(),
-      body: _loading
+      body: _currentIndex == 3
+          ? const ProfileScreen()
+          : _loading
           ? const Center(
               child: CircularProgressIndicator(color: AppTheme.primary),
             )
@@ -550,7 +553,16 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildBottomNav() {
     return BottomNavigationBar(
       currentIndex: _currentIndex,
-      onTap: (i) => setState(() => _currentIndex = i),
+      onTap: (i) {
+        if (i == 3) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const ProfileScreen()),
+          );
+        } else {
+          setState(() => _currentIndex = i);
+        }
+      },
       selectedItemColor: AppTheme.primary,
       unselectedItemColor: AppTheme.muted,
       showUnselectedLabels: true,
