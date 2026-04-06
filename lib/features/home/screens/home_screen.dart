@@ -5,6 +5,7 @@ import 'package:voyage_app/core/theme/app_theme.dart';
 import 'package:voyage_app/features/detail/screens/detail_screen.dart';
 import 'package:voyage_app/features/profile/screens/profile_screen.dart';
 import 'package:voyage_app/features/search/screens/search_screen.dart';
+import 'package:voyage_app/features/voyage/screens/create_voyage_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -160,6 +161,43 @@ class _HomeScreenState extends State<HomeScreen> {
                     style: TextStyle(color: AppTheme.muted, fontSize: 14),
                   ),
                 ],
+              ),
+            ),
+            const SizedBox(height: 12),
+            GestureDetector(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const CreateVoyageScreen()),
+                );
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.3),
+                  ),
+                ),
+                child: const Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.add, color: Colors.white, size: 20),
+                    SizedBox(width: 8),
+                    Text(
+                      'Créer un voyage',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ],
