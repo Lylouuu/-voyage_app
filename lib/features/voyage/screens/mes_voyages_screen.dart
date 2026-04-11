@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:voyage_app/core/theme/app_theme.dart';
 import 'package:voyage_app/features/voyage/screens/create_voyage_screen.dart';
 import 'package:voyage_app/features/voyage/screens/AvisForm.dart';
+import 'package:voyage_app/features/voyage/screens/itineraire_screen.dart';
 
 class MesVoyagesScreen extends StatefulWidget {
   const MesVoyagesScreen({super.key});
@@ -43,11 +44,6 @@ class _MesVoyagesScreenState extends State<MesVoyagesScreen> {
     }
   }
 
-  Future<void> _deleteVoyage(String id) async {
-    await _supabase.from('plans_voyage').delete().eq('id', id);
-    _loadVoyages();
-  }
-
   Future<void> _updateStatut(String id, String statut) async {
     await _supabase
         .from('plans_voyage')
@@ -61,6 +57,12 @@ class _MesVoyagesScreenState extends State<MesVoyagesScreen> {
       ),
     );
   }
+
+  Future<void> _deleteVoyage(String id) async {
+    await _supabase.from('plans_voyage').delete().eq('id', id);
+    _loadVoyages();
+  }
+
 
   String _formatDate(String? date) {
     if (date == null) return 'N/A';
@@ -118,7 +120,11 @@ class _MesVoyagesScreenState extends State<MesVoyagesScreen> {
                         color: Colors.white.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: const Icon(Icons.arrow_back, color: Colors.white, size: 20),
+                      child: const Icon(
+                        Icons.arrow_back,
+                        color: Colors.white,
+                        size: 20,
+                      ),
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -297,6 +303,24 @@ class _MesVoyagesScreenState extends State<MesVoyagesScreen> {
                   child: OutlinedButton(
                     onPressed: () => _deleteVoyage(voyage['id'].toString()),
                     child: const Text('🗑️ Supprimer'),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => ItineraireScreen(voyage: voyage),
+                        ),
+                      );
+                    },
+                    child: const Text('🗓️ Voir l\'itinéraire'),
                   ),
                 ),
               ],
