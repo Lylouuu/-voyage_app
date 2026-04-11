@@ -4,7 +4,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:voyage_app/core/theme/app_theme.dart';
 import 'package:voyage_app/features/auth/screens/auth_screen.dart';
 import 'package:voyage_app/features/home/screens/home_screen.dart';
-import 'package:voyage_app/features/onboarding/screens/onboarding_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -30,8 +29,6 @@ class MyApp extends StatelessWidget {
   }
 }
 
-
-
 class AuthWrapper extends StatelessWidget {
   const AuthWrapper({super.key});
 
@@ -43,26 +40,7 @@ class AuthWrapper extends StatelessWidget {
         if (snapshot.hasData) {
           final session = snapshot.data!.session;
           if (session != null) {
-            return FutureBuilder(
-              future: Supabase.instance.client
-                  .from('preferences')
-                  .select()
-                  .eq('id_user', session.user.id)
-                  .maybeSingle(),
-              builder: (context, prefSnapshot) {
-                if (prefSnapshot.connectionState == ConnectionState.waiting) {
-                  return const Scaffold(
-                    body: Center(
-                      child: CircularProgressIndicator(color: AppTheme.primary),
-                    ),
-                  );
-                }
-                if (prefSnapshot.data == null) {
-                  return const OnboardingScreen();
-                }
-                return const HomeScreen();
-              },
-            );
+            return const HomeScreen();
           }
         }
         return const AuthScreen();
@@ -70,3 +48,4 @@ class AuthWrapper extends StatelessWidget {
     );
   }
 }
+

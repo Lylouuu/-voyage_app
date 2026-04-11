@@ -4,7 +4,8 @@ import 'package:voyage_app/core/theme/app_theme.dart';
 import 'package:voyage_app/features/home/screens/home_screen.dart';
 
 class OnboardingScreen extends StatefulWidget {
-  const OnboardingScreen({super.key});
+  final bool isEditing;
+  const OnboardingScreen({super.key, this.isEditing = false});
 
   @override
   State<OnboardingScreen> createState() => _OnboardingScreenState();
@@ -15,6 +16,40 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   final _pageController = PageController();
 
   int _currentPage = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.isEditing) _loadExistingPrefs();
+  }
+
+  Future<void> _loadExistingPrefs() async {
+    final user = _supabase.auth.currentUser;
+    if (user == null) return;
+    try {
+      final rows = await _supabase
+          .from('preferences')
+          .select()
+          .eq('id_user', user.id)
+          .limit(1);
+      final prefs = rows.isNotEmpty ? rows.first : null;
+      if (prefs != null && mounted) {
+        setState(() {
+          _budget = prefs['budget'] ?? '';
+          _typeVoyage = prefs['type_voyage'] ?? '';
+          _dureeSejour = prefs['duree_sejour'] ?? '';
+          final ci = prefs['centres_interet'];
+          if (ci is List) {
+            _centresInteret
+              ..clear()
+              ..addAll(ci.map((e) => e.toString()));
+          }
+        });
+      }
+    } catch (e) {
+      debugPrint('[Onboarding] ERREUR chargement prefs: $e');
+    }
+  }
   bool _loading = false;
 
   // Préférences sélectionnées
@@ -85,13 +120,28 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       final user = _supabase.auth.currentUser!;
 
       // Sauvegarder dans la table preferences
-      await _supabase.from('preferences').upsert({
-        'id_user': user.id,
+      final existingRows = await _supabase
+          .from('preferences')
+          .select('id_user')
+          .eq('id_user', user.id)
+          .limit(1);
+      final existing = existingRows.isNotEmpty ? existingRows.first : null;
+      final prefsData = {
         'budget': _budget,
         'type_voyage': _typeVoyage,
         'duree_sejour': _dureeSejour,
         'centres_interet': _centresInteret,
-      });
+      };
+      if (existing != null) {
+        await _supabase
+            .from('preferences')
+            .update(prefsData)
+            .eq('id_user', user.id);
+      } else {
+        await _supabase
+            .from('preferences')
+            .insert({'id_user': user.id, ...prefsData});
+      }
 
       // Mettre à jour la table utilisateurs
       await _supabase
@@ -104,10 +154,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           .eq('id', user.id);
 
       if (mounted) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => const HomeScreen()),
-        );
+        if (widget.isEditing) {
+          Navigator.pop(context);
+        } else {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => const HomeScreen()),
+          );
+        }
       }
     } catch (e) {
       if (mounted) {

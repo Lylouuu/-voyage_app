@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:voyage_app/core/theme/app_theme.dart';
+import 'package:voyage_app/features/admin/screens/admin_screen.dart';
 import 'package:voyage_app/features/onboarding/screens/onboarding_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -32,22 +33,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
     Map<String, dynamic>? prefs;
 
     try {
-      userData = await _supabase
+      final userRows = await _supabase
           .from('utilisateurs')
           .select()
           .eq('id', user.id)
-          .maybeSingle();
+          .limit(1);
+      userData = userRows.isNotEmpty ? userRows.first : null;
       debugPrint('[Profile] utilisateurs: $userData');
     } catch (e) {
       debugPrint('[Profile] ERREUR utilisateurs: $e');
     }
 
     try {
-      prefs = await _supabase
+      final prefsRows = await _supabase
           .from('preferences')
           .select()
           .eq('id_user', user.id)
-          .maybeSingle();
+          .limit(1);
+      prefs = prefsRows.isNotEmpty ? prefsRows.first : null;
       debugPrint('[Profile] preferences: $prefs');
     } catch (e) {
       debugPrint('[Profile] ERREUR preferences: $e');
@@ -93,6 +96,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                     child: Column(
                       children: [
+                        // Bouton retour
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: GestureDetector(
+                            onTap: () => Navigator.pop(context),
+                            child: Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.2),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: const Icon(Icons.arrow_back, color: Colors.white, size: 20),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
                         // Avatar
                         Container(
                           width: 80,
@@ -220,7 +239,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                      builder: (_) => const OnboardingScreen(),
+                                      builder: (_) => const OnboardingScreen(isEditing: true),
                                     ),
                                   ).then((_) => _loadData());
                                 },
@@ -251,6 +270,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               _buildMenuItem('🔔', 'Notifications', () {}),
                               _buildMenuItem('🌐', 'Langue & Région', () {}),
                               _buildMenuItem('❓', 'Aide & Support', () {}),
+                              _buildMenuItem('⚙️', 'Administration', () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(builder: (_) => const AdminScreen()),
+                                );
+                              }),
                               _buildMenuItem(
                                 '🚪',
                                 'Déconnexion',

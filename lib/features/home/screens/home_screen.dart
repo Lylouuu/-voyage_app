@@ -7,6 +7,8 @@ import 'package:voyage_app/features/profile/screens/profile_screen.dart';
 import 'package:voyage_app/features/search/screens/search_screen.dart';
 import 'package:voyage_app/features/voyage/screens/create_voyage_screen.dart';
 import 'package:voyage_app/features/voyage/screens/mes_voyages_screen.dart';
+import 'package:voyage_app/features/recommandations/screens/recommandations_screen.dart';
+import 'package:voyage_app/features/admin/screens/admin_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -191,6 +193,45 @@ class _HomeScreenState extends State<HomeScreen> {
                     SizedBox(width: 8),
                     Text(
                       'Créer un voyage',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 10),
+            GestureDetector(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const RecommandationsScreen(),
+                  ),
+                );
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.3),
+                  ),
+                ),
+                child: const Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text('🤖', style: TextStyle(fontSize: 18)),
+                    SizedBox(width: 8),
+                    Text(
+                      'Recommandations IA',
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 14,
