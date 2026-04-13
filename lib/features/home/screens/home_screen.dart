@@ -8,7 +8,6 @@ import 'package:voyage_app/features/search/screens/search_screen.dart';
 import 'package:voyage_app/features/voyage/screens/create_voyage_screen.dart';
 import 'package:voyage_app/features/voyage/screens/mes_voyages_screen.dart';
 import 'package:voyage_app/features/recommandations/screens/recommandations_screen.dart';
-import 'package:voyage_app/features/admin/screens/admin_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:voyage_app/core/theme/app_theme.dart';
-import 'package:voyage_app/features/admin/screens/admin_screen.dart';
+import 'package:voyage_app/features/admin/screens/admin_login_screen.dart';
 import 'package:voyage_app/features/onboarding/screens/onboarding_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -273,7 +273,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               _buildMenuItem('⚙️', 'Administration', () {
                                 Navigator.push(
                                   context,
-                                  MaterialPageRoute(builder: (_) => const AdminScreen()),
+                                  MaterialPageRoute(builder: (_) => const AdminLoginScreen()),
                                 );
                               }),
                               _buildMenuItem(
