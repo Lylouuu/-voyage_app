@@ -2,6 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:voyage_app/core/theme/app_theme.dart';
+import 'package:voyage_app/features/favoris/services/favoris_service.dart';
 
 class DetailScreen extends StatefulWidget {
   final Map<String, dynamic> ville;
@@ -50,11 +51,15 @@ class _DetailScreenState extends State<DetailScreen>
           .from('restaurants')
           .select()
           .eq('id_ville', idVille);
+      
+      final favoris = await FavorisService.estFavoris(idVille.toString());
+
       if (mounted) {
         setState(() {
           _activites = List<Map<String, dynamic>>.from(activites);
           _hotels = List<Map<String, dynamic>>.from(hotels);
           _restaurants = List<Map<String, dynamic>>.from(restaurants);
+          _isFavoris = favoris;
           _loading = false;
         });
       }
@@ -91,7 +96,20 @@ class _DetailScreenState extends State<DetailScreen>
                   ),
                   actions: [
                     GestureDetector(
-                      onTap: () => setState(() => _isFavoris = !_isFavoris),
+                      onTap: () async {
+                        final newStatus = !_isFavoris;
+                        setState(() => _isFavoris = newStatus);
+                        try {
+                          if (newStatus) {
+                            await FavorisService.ajouterFavoris(ville['id'].toString(), ville['nom'] ?? '');
+                          } else {
+                            await FavorisService.supprimerFavoris(ville['id'].toString());
+                          }
+                        } catch (e) {
+                          // Rollback on error
+                          if (mounted) setState(() => _isFavoris = !newStatus);
+                        }
+                      },
                       child: Container(
                         margin: const EdgeInsets.all(8),
                         padding: const EdgeInsets.all(8),
