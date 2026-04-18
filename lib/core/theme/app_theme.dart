@@ -9,6 +9,11 @@ class AppTheme {
   static const Color muted = Color(0xFF7A9BA8);
   static const Color coral = Color(0xFFFF7F6B);
 
+  // Dark Navy theme colors for HomeScreen
+  static const Color darkNavy = Color(0xFF0F1B2D);
+  static const Color darkNavyLight = Color(0xFF162544);
+  static const Color limeGreen = Color(0xFFCBF266);
+
   static ThemeData get theme => ThemeData(
     useMaterial3: true,
     fontFamily: 'Poppins',

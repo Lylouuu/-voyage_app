@@ -1,8 +1,12 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:voyage_app/core/theme/app_theme.dart';
 import 'package:voyage_app/features/admin/screens/admin_login_screen.dart';
 import 'package:voyage_app/features/onboarding/screens/onboarding_screen.dart';
+import 'package:voyage_app/features/recommandations/screens/recommandations_screen.dart';
+import 'package:voyage_app/features/search/screens/search_screen.dart';
+import 'package:voyage_app/features/voyage/screens/mes_voyages_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -39,7 +43,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
           .eq('id', user.id)
           .limit(1);
       userData = userRows.isNotEmpty ? userRows.first : null;
-      debugPrint('[Profile] utilisateurs: $userData');
     } catch (e) {
       debugPrint('[Profile] ERREUR utilisateurs: $e');
     }
@@ -51,7 +54,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
           .eq('id_user', user.id)
           .limit(1);
       prefs = prefsRows.isNotEmpty ? prefsRows.first : null;
-      debugPrint('[Profile] preferences: $prefs');
     } catch (e) {
       debugPrint('[Profile] ERREUR preferences: $e');
     }
@@ -69,293 +71,288 @@ class _ProfileScreenState extends State<ProfileScreen> {
     await _supabase.auth.signOut();
   }
 
+  String _getUserInitial() {
+    final nom = _user?['nom'] ?? 'C';
+    if (nom.isNotEmpty) {
+      return nom[0].toUpperCase();
+    }
+    return 'C';
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.background,
-      body: _loading
-          ? const Center(
-              child: CircularProgressIndicator(color: AppTheme.primary),
-            )
-          : CustomScrollView(
-              slivers: [
-                // Header
-                SliverToBoxAdapter(
-                  child: Container(
-                    padding: const EdgeInsets.fromLTRB(24, 56, 24, 32),
-                    decoration: const BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [Color(0xFF0093E9), Color(0xFF7C3AED)],
-                      ),
-                      borderRadius: BorderRadius.only(
-                        bottomLeft: Radius.circular(32),
-                        bottomRight: Radius.circular(32),
-                      ),
-                    ),
-                    child: Column(
-                      children: [
-                        // Bouton retour
-                        Align(
-                          alignment: Alignment.centerLeft,
-                          child: GestureDetector(
-                            onTap: () => Navigator.pop(context),
-                            child: Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: 0.2),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: const Icon(Icons.arrow_back, color: Colors.white, size: 20),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        // Avatar
-                        Container(
-                          width: 80,
-                          height: 80,
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.2),
-                            borderRadius: BorderRadius.circular(24),
-                            border: Border.all(
-                              color: Colors.white.withOpacity(0.4),
-                              width: 2,
-                            ),
-                          ),
-                          child: const Center(
-                            child: Text('✈️', style: TextStyle(fontSize: 36)),
-                          ),
-                        ),
-                        const SizedBox(height: 14),
-                        Text(
-                          _user?['nom'] ?? '',
-                          style: const TextStyle(
-                            fontSize: 22,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          _user?['email'] ?? '',
-                          style: const TextStyle(
-                            fontSize: 14,
-                            color: Colors.white70,
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        // Stats
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceAround,
-                          children: [
-                            _buildStat('0', 'Voyages'),
-                            _buildStat('0', 'Favoris'),
-                            _buildStat('0', 'Avis'),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.all(20),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Préférences
-                        _buildSection(
-                          title: '🎯 Mes préférences',
-                          child: Column(
-                            children: [
-                              _buildPrefRow(
-                                '💰 Budget',
-                                _prefs?['budget'] ?? 'Non défini',
-                              ),
-                              _buildPrefRow(
-                                '👥 Type de voyage',
-                                _prefs?['type_voyage'] ?? 'Non défini',
-                              ),
-                              _buildPrefRow(
-                                '📅 Durée de séjour',
-                                _prefs?['duree_sejour'] ?? 'Non défini',
-                              ),
-                              const SizedBox(height: 10),
-                              // Centres d'intérêt
-                              if (_prefs?['centres_interet'] != null) ...[
-                                const Align(
-                                  alignment: Alignment.centerLeft,
-                                  child: Text(
-                                    '🌟 Centres d\'intérêt',
-                                    style: TextStyle(
-                                      fontSize: 13,
-                                      color: AppTheme.muted,
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(height: 8),
-                                Wrap(
-                                  spacing: 8,
-                                  runSpacing: 8,
-                                  children: (_prefs!['centres_interet'] as List)
-                                      .map(
-                                        (i) => Container(
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 12,
-                                            vertical: 6,
-                                          ),
-                                          decoration: BoxDecoration(
-                                            color: AppTheme.primary.withOpacity(
-                                              0.1,
-                                            ),
-                                            borderRadius: BorderRadius.circular(
-                                              50,
-                                            ),
-                                            border: Border.all(
-                                              color: AppTheme.primary
-                                                  .withOpacity(0.3),
-                                            ),
-                                          ),
-                                          child: Text(
-                                            i.toString(),
-                                            style: TextStyle(
-                                              fontSize: 12,
-                                              color: AppTheme.primary,
-                                              fontWeight: FontWeight.w600,
-                                            ),
-                                          ),
-                                        ),
-                                      )
-                                      .toList(),
-                                ),
-                              ],
-                              const SizedBox(height: 14),
-                              // Modifier préférences
-                              OutlinedButton(
-                                onPressed: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (_) => const OnboardingScreen(isEditing: true),
-                                    ),
-                                  ).then((_) => _loadData());
-                                },
-                                style: OutlinedButton.styleFrom(
-                                  foregroundColor: AppTheme.primary,
-                                  side: BorderSide(color: AppTheme.primary),
-                                  minimumSize: const Size(double.infinity, 48),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(14),
-                                  ),
-                                ),
-                                child: const Text(
-                                  '✏️ Modifier mes préférences',
-                                  style: TextStyle(fontWeight: FontWeight.w600),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-
-                        const SizedBox(height: 16),
-
-                        // Paramètres
-                        _buildSection(
-                          title: '⚙️ Paramètres',
-                          child: Column(
-                            children: [
-                              _buildMenuItem('🔔', 'Notifications', () {}),
-                              _buildMenuItem('🌐', 'Langue & Région', () {}),
-                              _buildMenuItem('❓', 'Aide & Support', () {}),
-                              _buildMenuItem('⚙️', 'Administration', () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(builder: (_) => const AdminLoginScreen()),
-                                );
-                              }),
-                              _buildMenuItem(
-                                '🚪',
-                                'Déconnexion',
-                                _signOut,
-                                color: AppTheme.coral,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
+      backgroundColor: AppTheme.darkNavy,
+      bottomNavigationBar: _buildBottomNav(),
+      body: Stack(
+        children: [
+          // Background Gradient (Soft and dark)
+          Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Color(0xFF0F1B2D),
+                  Color(0xFF0A1628),
+                ],
+              ),
             ),
+          ),
+          
+          SafeArea(
+            child: _loading
+                ? const Center(
+                    child: CircularProgressIndicator(color: AppTheme.limeGreen),
+                  )
+                : SingleChildScrollView(
+                    physics: const BouncingScrollPhysics(),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        _buildSimpleHeader(),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _buildPreferencesSection(),
+                              const SizedBox(height: 32),
+                              _buildSettingsSection(),
+                              const SizedBox(height: 32),
+                              _buildLogoutButton(),
+                              const SizedBox(height: 40),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+          ),
+        ],
+      ),
     );
   }
 
-  Widget _buildStat(String value, String label) {
+  // ─────────────────────────────────────────────
+  // HEADER (SIMPLE + PREMIUM)
+  // ─────────────────────────────────────────────
+  Widget _buildSimpleHeader() {
+    final initial = _getUserInitial();
+    
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
+      child: Column(
+        children: [
+          Align(
+            alignment: Alignment.centerLeft,
+            child: GestureDetector(
+              onTap: () => Navigator.pop(context),
+              child: Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.05),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white.withOpacity(0.9), size: 18),
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          // Avatar: Circle, soft neon background, subtle shadow
+          Container(
+            width: 80,
+            height: 80,
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [AppTheme.limeGreen, Color(0xFF6EDC7B)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.2),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Center(
+              child: Text(
+                initial,
+                style: const TextStyle(
+                  fontSize: 32,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF0F1B2D),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            _user?['nom'] ?? 'Voyageur',
+            style: const TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+              letterSpacing: -0.5,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            _user?['email'] ?? 'email@introuvable.com',
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.white.withOpacity(0.6),
+            ),
+          ),
+          const SizedBox(height: 28),
+          
+          // Ultra Clean Stats Row
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              _buildCleanStat('0', 'Voyages'),
+              _buildCleanStat('0', 'Favoris'),
+              _buildCleanStat('0', 'Avis'),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCleanStat(String value, String label) {
     return Column(
       children: [
         Text(
           value,
           style: const TextStyle(
-            fontSize: 22,
+            fontSize: 20,
             fontWeight: FontWeight.bold,
             color: Colors.white,
           ),
         ),
-        const SizedBox(height: 2),
+        const SizedBox(height: 4),
         Text(
           label,
-          style: const TextStyle(fontSize: 12, color: Colors.white70),
+          style: TextStyle(
+            fontSize: 12,
+            color: Colors.white.withOpacity(0.5),
+            fontWeight: FontWeight.w500,
+          ),
         ),
       ],
     );
   }
 
-  Widget _buildSection({required String title, required Widget child}) {
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.grey.shade100),
-        boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: AppTheme.dark,
-            ),
+  // ─────────────────────────────────────────────
+  // PREFERENCES SECTION
+  // ─────────────────────────────────────────────
+  Widget _buildPreferencesSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Mes préférences',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
           ),
-          const SizedBox(height: 14),
-          child,
-        ],
-      ),
+        ),
+        const SizedBox(height: 16),
+        Container(
+          decoration: BoxDecoration(
+            color: const Color(0xFF162544),
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Column(
+            children: [
+              _buildPrefRow('💰', 'Budget', _prefs?['budget'] ?? 'Non défini'),
+              _buildDivider(),
+              _buildPrefRow('👥', 'Type de voyage', _prefs?['type_voyage'] ?? 'Non défini'),
+              _buildDivider(),
+              _buildPrefRow('📅', 'Durée de séjour', _prefs?['duree_sejour'] ?? 'Non défini'),
+              
+              if (_prefs?['centres_interet'] != null) ...[
+                _buildDivider(),
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Centres d\'intérêt',
+                        style: TextStyle(fontSize: 14, color: Colors.white.withOpacity(0.6)),
+                      ),
+                      const SizedBox(height: 12),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: (_prefs!['centres_interet'] as List)
+                            .map(
+                              (i) => Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                                decoration: BoxDecoration(
+                                  color: AppTheme.limeGreen.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                                child: Text(
+                                  i.toString(),
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    color: AppTheme.limeGreen,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                            )
+                            .toList(),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+        const SizedBox(height: 20),
+        // Modifier préférences Button (Clean, no glow)
+        _InteractiveButton(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => const OnboardingScreen(isEditing: true),
+              ),
+            ).then((_) => _loadData());
+          },
+          label: 'Modifier mes préférences',
+        ),
+      ],
     );
   }
 
-  Widget _buildPrefRow(String label, String value) {
+  Widget _buildPrefRow(String icon, String label, String value) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: TextStyle(fontSize: 13, color: AppTheme.muted)),
+          Text(icon, style: const TextStyle(fontSize: 18)),
+          const SizedBox(width: 14),
+          Text(
+            label,
+            style: TextStyle(fontSize: 15, color: Colors.white.withOpacity(0.8), fontWeight: FontWeight.w500),
+          ),
+          const Spacer(),
           Text(
             value,
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: AppTheme.primary,
+            style: const TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.bold,
+              color: AppTheme.limeGreen,
             ),
           ),
         ],
@@ -363,31 +360,281 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildMenuItem(
-    String emoji,
-    String label,
-    VoidCallback onTap, {
-    Color? color,
-  }) {
+  Widget _buildDivider() {
+    return Container(
+      height: 1,
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      color: Colors.white.withOpacity(0.05),
+    );
+  }
+
+  // ─────────────────────────────────────────────
+  // SETTINGS SECTION
+  // ─────────────────────────────────────────────
+  Widget _buildSettingsSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Paramètres',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+        ),
+        const SizedBox(height: 16),
+        _InteractiveSettingCard(icon: Icons.notifications_none_rounded, label: 'Notifications', onTap: () {}),
+        const SizedBox(height: 10),
+        _InteractiveSettingCard(icon: Icons.language_rounded, label: 'Langue & Région', onTap: () {}),
+        const SizedBox(height: 10),
+        _InteractiveSettingCard(icon: Icons.help_outline_rounded, label: 'Aide & Support', onTap: () {}),
+        const SizedBox(height: 10),
+        _InteractiveSettingCard(
+          icon: Icons.admin_panel_settings_outlined,
+          label: 'Administration',
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const AdminLoginScreen()),
+            );
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildLogoutButton() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(left: 16, bottom: 8, top: 12),
+          child: Text(
+            'Sécurité',
+            style: TextStyle(fontSize: 13, color: Colors.white.withOpacity(0.5), fontWeight: FontWeight.w600),
+          ),
+        ),
+        _InteractiveSettingCard(
+          icon: Icons.logout_rounded,
+          label: 'Déconnexion',
+          onTap: _signOut,
+          isDanger: true,
+        ),
+      ],
+    );
+  }
+
+  // ─────────────────────────────────────────────
+  // BOTTOM NAVIGATION BAR
+  // ─────────────────────────────────────────────
+  Widget _buildBottomNav() {
+    return Container(
+      padding: EdgeInsets.only(bottom: MediaQuery.of(context).padding.bottom + 8, top: 12),
+      decoration: BoxDecoration(
+        color: const Color(0xFF0A1628),
+        border: Border(top: BorderSide(color: Colors.white.withOpacity(0.05))),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: [
+          _buildNavItem(index: 0, icon: Icons.home_rounded, activeIcon: Icons.home_rounded, label: 'Home'),
+          _buildNavItem(index: 1, icon: Icons.explore_outlined, activeIcon: Icons.explore, label: 'Explorer'),
+          _buildNavAIButton(),
+          _buildNavItem(index: 3, icon: Icons.luggage_outlined, activeIcon: Icons.luggage, label: 'Mes Voyages'),
+          _buildNavItem(index: 4, icon: Icons.person_outline_rounded, activeIcon: Icons.person_rounded, label: 'Profil'),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNavItem({required int index, required IconData icon, required IconData activeIcon, required String label}) {
+    final isActive = 4 == index;
     return GestureDetector(
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 12),
-        child: Row(
+      onTap: () {
+        if (isActive) return;
+        if (index == 0) {
+          Navigator.pop(context);
+        } else if (index == 1) {
+          Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const SearchScreen()));
+        } else if (index == 3) {
+          Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const MesVoyagesScreen()));
+        }
+      },
+      behavior: HitTestBehavior.opaque,
+      child: SizedBox(
+        width: 60,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Text(emoji, style: const TextStyle(fontSize: 20)),
-            const SizedBox(width: 12),
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 300),
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: isActive ? AppTheme.limeGreen : Colors.transparent,
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Icon(
+                isActive ? activeIcon : icon,
+                color: isActive ? const Color(0xFF0F1B2D) : Colors.white.withOpacity(0.4),
+                size: 22,
+              ),
+            ),
+            const SizedBox(height: 4),
             Text(
               label,
               style: TextStyle(
-                fontSize: 15,
-                color: color ?? AppTheme.dark,
-                fontWeight: FontWeight.w500,
+                color: isActive ? AppTheme.limeGreen : Colors.white.withOpacity(0.35),
+                fontSize: 10,
+                fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNavAIButton() {
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(context, MaterialPageRoute(builder: (_) => const RecommandationsScreen()));
+      },
+      child: Container(
+        width: 56,
+        height: 56,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          gradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [Color(0xFF7C3AED), Color(0xFF9F5AFF), Color(0xFFB47AFF)],
+          ),
+          boxShadow: [
+            BoxShadow(color: const Color(0xFF7C3AED).withOpacity(0.4), blurRadius: 16, offset: const Offset(0, 4)),
+          ],
+        ),
+        child: const Center(
+          child: Icon(Icons.auto_awesome, color: Colors.white, size: 26),
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────
+// INTERACTIVE WIDGETS
+// ─────────────────────────────────────────────
+
+class _InteractiveSettingCard extends StatefulWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+  final bool isDanger;
+
+  const _InteractiveSettingCard({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    this.isDanger = false,
+  });
+
+  @override
+  State<_InteractiveSettingCard> createState() => _InteractiveSettingCardState();
+}
+
+class _InteractiveSettingCardState extends State<_InteractiveSettingCard> {
+  bool _isPressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = widget.isDanger ? Colors.redAccent : Colors.white;
+
+    return GestureDetector(
+      onTapDown: (_) => setState(() => _isPressed = true),
+      onTapUp: (_) {
+        setState(() => _isPressed = false);
+        widget.onTap();
+      },
+      onTapCancel: () => setState(() => _isPressed = false),
+      child: AnimatedScale(
+        scale: _isPressed ? 0.98 : 1.0,
+        duration: const Duration(milliseconds: 100),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          decoration: BoxDecoration(
+            color: const Color(0xFF162544),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: _isPressed ? Colors.white.withOpacity(0.1) : Colors.transparent,
+            ),
+          ),
+          child: Row(
+            children: [
+              Icon(widget.icon, color: color.withOpacity(0.8), size: 22),
+              const SizedBox(width: 16),
+              Text(
+                widget.label,
+                style: TextStyle(
+                  fontSize: 16,
+                  color: color,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const Spacer(),
+              Icon(Icons.chevron_right_rounded, color: color.withOpacity(0.3), size: 20),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _InteractiveButton extends StatefulWidget {
+  final String label;
+  final VoidCallback onTap;
+
+  const _InteractiveButton({required this.label, required this.onTap});
+
+  @override
+  State<_InteractiveButton> createState() => _InteractiveButtonState();
+}
+
+class _InteractiveButtonState extends State<_InteractiveButton> {
+  bool _isPressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTapDown: (_) => setState(() => _isPressed = true),
+      onTapUp: (_) {
+        setState(() => _isPressed = false);
+        widget.onTap();
+      },
+      onTapCancel: () => setState(() => _isPressed = false),
+      child: AnimatedScale(
+        scale: _isPressed ? 0.96 : 1.0,
+        duration: const Duration(milliseconds: 100),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          decoration: BoxDecoration(
+            color: AppTheme.limeGreen.withOpacity(0.9), // Soft green, no heavy glow
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: Center(
+            child: Text(
+              widget.label,
+              style: const TextStyle(
+                color: Color(0xFF0F1B2D),
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
               ),
             ),
-            const Spacer(),
-            Icon(Icons.chevron_right, color: color ?? AppTheme.muted, size: 20),
-          ],
+          ),
         ),
       ),
     );

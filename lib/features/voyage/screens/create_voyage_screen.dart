@@ -12,6 +12,7 @@ class CreateVoyageScreen extends StatefulWidget {
 class _CreateVoyageScreenState extends State<CreateVoyageScreen> {
   final _supabase = Supabase.instance.client;
   final _formKey = GlobalKey<FormState>();
+  
   final _titreController = TextEditingController();
   final _notesController = TextEditingController();
   final _budgetController = TextEditingController();
@@ -19,9 +20,11 @@ class _CreateVoyageScreenState extends State<CreateVoyageScreen> {
   DateTime? _dateDebut;
   DateTime? _dateFin;
   bool _loading = false;
+  
   List<Map<String, dynamic>> _villes = [];
   List<Map<String, dynamic>> _activites = [];
   List<String> _selectedActivites = [];
+  
   String? _selectedVilleId;
   String _selectedType = 'Solo';
 
@@ -78,13 +81,20 @@ class _CreateVoyageScreenState extends State<CreateVoyageScreen> {
       lastDate: DateTime(2030),
       builder: (context, child) {
         return Theme(
-          data: Theme.of(
-            context,
-          ).copyWith(colorScheme: ColorScheme.light(primary: AppTheme.primary)),
+          data: ThemeData.dark().copyWith(
+            colorScheme: const ColorScheme.dark(
+              primary: AppTheme.limeGreen,
+              onPrimary: Color(0xFF0F1B2D),
+              surface: Color(0xFF162544),
+              onSurface: Colors.white,
+            ),
+            dialogBackgroundColor: const Color(0xFF162544),
+          ),
           child: child!,
         );
       },
     );
+
     if (picked != null) {
       setState(() {
         if (isDebut) {
@@ -102,11 +112,11 @@ class _CreateVoyageScreenState extends State<CreateVoyageScreen> {
   Future<void> _createVoyage() async {
     if (!_formKey.currentState!.validate()) return;
     if (_dateDebut == null || _dateFin == null) {
-      _showSnack('Veuillez sélectionner les dates', AppTheme.coral);
+      _showSnack('Veuillez sélectionner les dates', Colors.redAccent);
       return;
     }
     if (_selectedVilleId == null) {
-      _showSnack('Veuillez sélectionner une destination', AppTheme.coral);
+      _showSnack('Veuillez sélectionner une destination', Colors.redAccent);
       return;
     }
 
@@ -137,25 +147,30 @@ class _CreateVoyageScreenState extends State<CreateVoyageScreen> {
       });
 
       if (mounted) {
-        _showSnack('✅ Voyage créé avec succès !', AppTheme.primary);
+        _showSnack('✅ Voyage créé avec succès !', AppTheme.limeGreen);
         Navigator.pop(context, true);
       }
     } catch (e) {
-      if (mounted) _showSnack('Erreur : $e', AppTheme.coral);
+      if (mounted) _showSnack('Erreur : $e', Colors.redAccent);
     } finally {
       if (mounted) setState(() => _loading = false);
     }
   }
 
   void _showSnack(String msg, Color color) {
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(msg), backgroundColor: color));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(msg, style: TextStyle(color: color == AppTheme.limeGreen ? const Color(0xFF0F1B2D) : Colors.white, fontWeight: FontWeight.bold)),
+        backgroundColor: color,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      ),
+    );
   }
 
   String _formatDate(DateTime? date) {
     if (date == null) return 'Sélectionner';
-    return '${date.day}/${date.month}/${date.year}';
+    return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
   }
 
   int _nombreJours() {
@@ -166,423 +181,125 @@ class _CreateVoyageScreenState extends State<CreateVoyageScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.background,
-      body: CustomScrollView(
-        slivers: [
-          SliverAppBar(
-            expandedHeight: 160,
-            pinned: true,
-            backgroundColor: AppTheme.primary,
-            leading: GestureDetector(
-              onTap: () => Navigator.pop(context),
-              child: Container(
-                margin: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.3),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Icon(Icons.arrow_back, color: Colors.white),
-              ),
-            ),
-            flexibleSpace: FlexibleSpaceBar(
-              background: Container(
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [Color(0xFF00C9B1), Color(0xFF0093E9)],
-                  ),
-                ),
-                child: const SafeArea(
-                  child: Padding(
-                    padding: EdgeInsets.fromLTRB(24, 50, 24, 20),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        Text(
-                          '✈️ Créer un voyage',
-                          style: TextStyle(
-                            fontSize: 28,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        ),
-                        SizedBox(height: 4),
-                        Text(
-                          'Planifiez votre prochaine aventure',
-                          style: TextStyle(fontSize: 14, color: Colors.white70),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
+      backgroundColor: AppTheme.darkNavy,
+      body: Stack(
+        children: [
+          // Background Gradient
+          Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [Color(0xFF0F1B2D), Color(0xFF0A1628)],
               ),
             ),
           ),
+          
+          SafeArea(
+            child: CustomScrollView(
+              physics: const BouncingScrollPhysics(),
+              slivers: [
+                _buildHeader(),
 
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  children: [
-                    // ── Titre
-                    _buildCard(
-                      title: '📝 Nom du voyage',
-                      child: TextFormField(
-                        controller: _titreController,
-                        style: const TextStyle(color: AppTheme.dark),
-                        decoration: InputDecoration(
-                          hintText: 'Ex: Vacances été 2025 à Bali',
-                          hintStyle: TextStyle(
-                            color: AppTheme.muted.withValues(alpha: 0.6),
-                          ),
-                          prefixIcon: const Icon(
-                            Icons.edit_outlined,
-                            color: AppTheme.primary,
-                          ),
-                        ),
-                        validator: (v) => v!.isEmpty ? 'Nom requis' : null,
-                      ),
-                    ),
-
-                    const SizedBox(height: 16),
-
-                    // ── Type de voyage
-                    _buildCard(
-                      title: '👥 Type de voyage',
-                      child: Row(
-                        children: _types.map((t) {
-                          final sel = _selectedType == t['label'];
-                          return Expanded(
-                            child: GestureDetector(
-                              onTap: () =>
-                                  setState(() => _selectedType = t['label']!),
-                              child: AnimatedContainer(
-                                duration: const Duration(milliseconds: 200),
-                                margin: const EdgeInsets.symmetric(
-                                  horizontal: 4,
-                                ),
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 12,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: sel
-                                      ? AppTheme.primary
-                                      : AppTheme.background,
-                                  borderRadius: BorderRadius.circular(14),
-                                  border: Border.all(
-                                    color: sel
-                                        ? AppTheme.primary
-                                        : Colors.grey.shade200,
-                                  ),
-                                ),
-                                child: Column(
-                                  children: [
-                                    Text(
-                                      t['emoji']!,
-                                      style: const TextStyle(fontSize: 22),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      t['label']!,
-                                      style: TextStyle(
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.w600,
-                                        color: sel
-                                            ? Colors.white
-                                            : AppTheme.dark,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          );
-                        }).toList(),
-                      ),
-                    ),
-
-                    const SizedBox(height: 16),
-
-                    // ── Destination
-                    _buildCard(
-                      title: '🌍 Destination',
-                      child: DropdownButtonFormField<String>(
-                        value: _selectedVilleId,
-                        decoration: InputDecoration(
-                          hintText: 'Choisir une ville',
-                          hintStyle: TextStyle(
-                            color: AppTheme.muted.withValues(alpha: 0.6),
-                          ),
-                          prefixIcon: const Icon(
-                            Icons.location_on_outlined,
-                            color: AppTheme.primary,
-                          ),
-                        ),
-                        items: _villes.map((v) {
-                          return DropdownMenuItem<String>(
-                            value: v['id'].toString(),
-                            child: Text(
-                              '${v['nom']} — ${v['pays']?['nom'] ?? ''}',
-                              style: const TextStyle(
-                                fontSize: 14,
-                                color: AppTheme.dark,
-                              ),
-                            ),
-                          );
-                        }).toList(),
-                        onChanged: (val) {
-                          setState(() => _selectedVilleId = val);
-                          if (val != null) _loadActivites(val);
-                        },
-                      ),
-                    ),
-
-                    const SizedBox(height: 16),
-
-                    // ── Activités
-                    if (_activites.isNotEmpty)
-                      _buildCard(
-                        title: '🎯 Activités à faire',
-                        child: Column(
-                          children: _activites.map((a) {
-                            final sel = _selectedActivites.contains(
-                              a['id'].toString(),
-                            );
-                            return GestureDetector(
-                              onTap: () {
-                                setState(() {
-                                  if (sel) {
-                                    _selectedActivites.remove(
-                                      a['id'].toString(),
-                                    );
-                                  } else {
-                                    _selectedActivites.add(a['id'].toString());
-                                  }
-                                });
-                              },
-                              child: AnimatedContainer(
-                                duration: const Duration(milliseconds: 200),
-                                margin: const EdgeInsets.only(bottom: 8),
-                                padding: const EdgeInsets.all(12),
-                                decoration: BoxDecoration(
-                                  color: sel
-                                      ? AppTheme.primary.withValues(alpha: 0.08)
-                                      : AppTheme.background,
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(
-                                    color: sel
-                                        ? AppTheme.primary
-                                        : Colors.grey.shade200,
-                                    width: sel ? 1.5 : 1,
-                                  ),
-                                ),
-                                child: Row(
-                                  children: [
-                                    Icon(
-                                      sel
-                                          ? Icons.check_circle
-                                          : Icons.circle_outlined,
-                                      color: sel
-                                          ? AppTheme.primary
-                                          : AppTheme.muted,
-                                      size: 20,
-                                    ),
-                                    const SizedBox(width: 10),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            a['nom'] ?? '',
-                                            style: TextStyle(
-                                              fontSize: 14,
-                                              fontWeight: FontWeight.w600,
-                                              color: sel
-                                                  ? AppTheme.primary
-                                                  : AppTheme.dark,
-                                            ),
-                                          ),
-                                          const SizedBox(height: 2),
-                                          Text(
-                                            '${a['duree'] ?? ''} · ${a['prix'] == 0 ? 'Gratuit' : '${a['prix']}€'}',
-                                            style: TextStyle(
-                                              fontSize: 12,
-                                              color: AppTheme.muted,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 8,
-                                        vertical: 4,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: AppTheme.primary.withValues(
-                                          alpha: 0.1,
-                                        ),
-                                        borderRadius: BorderRadius.circular(50),
-                                      ),
-                                      child: Text(
-                                        a['categorie'] ?? '',
-                                        style: TextStyle(
-                                          fontSize: 10,
-                                          color: AppTheme.primary,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            );
-                          }).toList(),
-                        ),
-                      ),
-
-                    if (_activites.isNotEmpty) const SizedBox(height: 16),
-
-                    // ── Dates
-                    _buildCard(
-                      title: '📅 Dates du voyage',
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+                    child: Form(
+                      key: _formKey,
                       child: Column(
                         children: [
-                          Row(
-                            children: [
-                              Expanded(
-                                child: GestureDetector(
-                                  onTap: () => _pickDate(isDebut: true),
-                                  child: _buildDateBox(
-                                    label: 'Départ',
-                                    date: _formatDate(_dateDebut),
-                                    icon: Icons.flight_takeoff,
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: GestureDetector(
-                                  onTap: () => _pickDate(isDebut: false),
-                                  child: _buildDateBox(
-                                    label: 'Retour',
-                                    date: _formatDate(_dateFin),
-                                    icon: Icons.flight_land,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          if (_nombreJours() > 0) ...[
-                            const SizedBox(height: 12),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 10,
-                              ),
-                              decoration: BoxDecoration(
-                                color: AppTheme.primary.withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  const Icon(
-                                    Icons.calendar_today,
-                                    color: AppTheme.primary,
-                                    size: 16,
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    '${_nombreJours()} jours de voyage',
-                                    style: const TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w600,
-                                      color: AppTheme.primary,
-                                    ),
-                                  ),
-                                ],
-                              ),
+                          _buildPremiumCard(
+                            title: '📝 Nom du voyage',
+                            child: _PremiumTextField(
+                              controller: _titreController,
+                              hintText: 'Ex: Vacances été 2025 à Bali',
+                              icon: Icons.edit_outlined,
+                              validator: (v) => v!.isEmpty ? 'Nom requis' : null,
                             ),
+                          ),
+                          const SizedBox(height: 24),
+
+                          _buildPremiumCard(
+                            title: '👥 Type de voyage',
+                            child: _buildTravelTypeSelector(),
+                          ),
+                          const SizedBox(height: 24),
+
+                          _buildPremiumCard(
+                            title: '🌍 Destination',
+                            child: _buildDestinationDropdown(),
+                          ),
+                          const SizedBox(height: 24),
+
+                          if (_activites.isNotEmpty) ...[
+                            _buildPremiumCard(
+                              title: '🎯 Activités souhaitées',
+                              child: _buildActivitiesList(),
+                            ),
+                            const SizedBox(height: 24),
                           ],
+
+                          _buildPremiumCard(
+                            title: '📅 Dates du voyage',
+                            child: _buildDatesCard(),
+                          ),
+                          const SizedBox(height: 24),
+
+                          _buildPremiumCard(
+                            title: '💰 Budget estimé',
+                            child: _PremiumTextField(
+                              controller: _budgetController,
+                              hintText: 'Ex: 1500',
+                              icon: Icons.euro_rounded,
+                              keyboardType: TextInputType.number,
+                              suffixText: '€',
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+
+                          _buildPremiumCard(
+                            title: '📌 Notes & Remarques',
+                            child: _PremiumTextField(
+                              controller: _notesController,
+                              hintText: 'Ajoutez vos notes, idées...',
+                              icon: Icons.notes_rounded,
+                              maxLines: 3,
+                            ),
+                          ),
+                          
+                          const SizedBox(height: 120), // Bottom padding for CTA
                         ],
                       ),
                     ),
-
-                    const SizedBox(height: 16),
-
-                    // ── Budget
-                    _buildCard(
-                      title: '💰 Budget estimé (€)',
-                      child: TextFormField(
-                        controller: _budgetController,
-                        keyboardType: TextInputType.number,
-                        style: const TextStyle(color: AppTheme.dark),
-                        decoration: InputDecoration(
-                          hintText: 'Ex: 1500',
-                          hintStyle: TextStyle(
-                            color: AppTheme.muted.withValues(alpha: 0.6),
-                          ),
-                          prefixIcon: const Icon(
-                            Icons.euro,
-                            color: AppTheme.primary,
-                          ),
-                          suffixText: '€',
-                        ),
-                      ),
-                    ),
-
-                    const SizedBox(height: 16),
-
-                    // ── Notes
-                    _buildCard(
-                      title: '📌 Notes & remarques',
-                      child: TextFormField(
-                        controller: _notesController,
-                        maxLines: 3,
-                        style: const TextStyle(color: AppTheme.dark),
-                        decoration: InputDecoration(
-                          hintText:
-                              'Ajoutez vos notes, idées, choses à ne pas oublier...',
-                          hintStyle: TextStyle(
-                            color: AppTheme.muted.withValues(alpha: 0.6),
-                          ),
-                          border: InputBorder.none,
-                        ),
-                      ),
-                    ),
-
-                    const SizedBox(height: 32),
-
-                    // ── Bouton créer
-                    ElevatedButton(
-                      onPressed: _loading ? null : _createVoyage,
-                      child: _loading
-                          ? const SizedBox(
-                              height: 22,
-                              width: 22,
-                              child: CircularProgressIndicator(
-                                color: Colors.white,
-                                strokeWidth: 2,
-                              ),
-                            )
-                          : const Text(
-                              '✈️ Créer mon voyage',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                    ),
-
-                    const SizedBox(height: 30),
-                  ],
+                  ),
                 ),
+              ],
+            ),
+          ),
+
+          // BOTTOM CTA BUTTON (Floating)
+          Positioned(
+            bottom: 0,
+            left: 0,
+            right: 0,
+            child: Container(
+              padding: EdgeInsets.fromLTRB(24, 20, 24, MediaQuery.of(context).padding.bottom + 16),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.bottomCenter,
+                  end: Alignment.topCenter,
+                  colors: [
+                    AppTheme.darkNavy,
+                    AppTheme.darkNavy.withOpacity(0.9),
+                    Colors.transparent,
+                  ],
+                  stops: const [0.3, 0.7, 1.0],
+                ),
+              ),
+              child: _InteractiveButton(
+                loading: _loading,
+                label: 'Créer mon voyage',
+                onTap: _loading ? () {} : _createVoyage,
               ),
             ),
           ),
@@ -591,18 +308,69 @@ class _CreateVoyageScreenState extends State<CreateVoyageScreen> {
     );
   }
 
-  Widget _buildCard({required String title, required Widget child}) {
+  // ─────────────────────────────────────────────
+  // HEADER
+  // ─────────────────────────────────────────────
+  Widget _buildHeader() {
+    return SliverToBoxAdapter(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(24, 24, 24, 10),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            GestureDetector(
+              onTap: () => Navigator.pop(context),
+              child: Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.05),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: Colors.white.withOpacity(0.1)),
+                ),
+                child: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 18),
+              ),
+            ),
+            const SizedBox(height: 28),
+            const Text(
+              'Créer un voyage',
+              style: TextStyle(
+                fontSize: 34,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+                letterSpacing: -1,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              'Planifiez votre prochaine aventure',
+              style: TextStyle(
+                fontSize: 16,
+                color: Colors.white.withOpacity(0.6),
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ─────────────────────────────────────────────
+  // PREMIUM SECTION CARDS
+  // ─────────────────────────────────────────────
+  Widget _buildPremiumCard({required String title, required Widget child}) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.grey.shade100),
+        color: const Color(0xFF162544),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: Colors.white.withOpacity(0.03)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 10,
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 15,
+            offset: const Offset(0, 8),
           ),
         ],
       ),
@@ -612,57 +380,382 @@ class _CreateVoyageScreenState extends State<CreateVoyageScreen> {
           Text(
             title,
             style: const TextStyle(
-              fontSize: 15,
+              fontSize: 16,
               fontWeight: FontWeight.bold,
-              color: AppTheme.dark,
+              color: Colors.white,
+              letterSpacing: -0.3,
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
           child,
         ],
       ),
     );
   }
 
-  Widget _buildDateBox({
-    required String label,
-    required String date,
-    required IconData icon,
-  }) {
+  // ─────────────────────────────────────────────
+  // SPECIFIC UI FORMS
+  // ─────────────────────────────────────────────
+  Widget _buildTravelTypeSelector() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: _types.map((t) {
+        final sel = _selectedType == t['label'];
+        return Expanded(
+          child: GestureDetector(
+            onTap: () => setState(() => _selectedType = t['label']!),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              curve: Curves.easeOutCubic,
+              margin: const EdgeInsets.symmetric(horizontal: 4),
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              decoration: BoxDecoration(
+                color: sel ? AppTheme.limeGreen.withOpacity(0.15) : Colors.white.withOpacity(0.03),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: sel ? AppTheme.limeGreen : Colors.transparent),
+              ),
+              child: Column(
+                children: [
+                  Text(t['emoji']!, style: const TextStyle(fontSize: 22)),
+                  const SizedBox(height: 6),
+                  Text(
+                    t['label']!,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: sel ? FontWeight.bold : FontWeight.w600,
+                      color: sel ? AppTheme.limeGreen : Colors.white.withOpacity(0.5),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+  Widget _buildDestinationDropdown() {
+    return DropdownButtonFormField<String>(
+      value: _selectedVilleId,
+      dropdownColor: const Color(0xFF162544),
+      icon: const Icon(Icons.keyboard_arrow_down_rounded, color: AppTheme.limeGreen),
+      style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w500),
+      // Muted background to match text fields
+      decoration: InputDecoration(
+        hintText: 'Choisir une ville',
+        hintStyle: TextStyle(color: Colors.white.withOpacity(0.3)),
+        prefixIcon: const Icon(Icons.location_on_outlined, color: AppTheme.limeGreen),
+        filled: true,
+        fillColor: Colors.white.withOpacity(0.05),
+        contentPadding: const EdgeInsets.all(16),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide.none,
+        ),
+      ),
+      items: _villes.map((v) {
+        return DropdownMenuItem<String>(
+          value: v['id'].toString(),
+          child: Text(
+            '${v['nom']} — ${v['pays']?['nom'] ?? ''}',
+            style: const TextStyle(fontSize: 15),
+          ),
+        );
+      }).toList(),
+      onChanged: (val) {
+        setState(() => _selectedVilleId = val);
+        if (val != null) _loadActivites(val);
+      },
+    );
+  }
+
+  Widget _buildActivitiesList() {
+    return Column(
+      children: _activites.map((a) {
+        final sel = _selectedActivites.contains(a['id'].toString());
+        return GestureDetector(
+          onTap: () {
+            setState(() {
+              if (sel) {
+                _selectedActivites.remove(a['id'].toString());
+              } else {
+                _selectedActivites.add(a['id'].toString());
+              }
+            });
+          },
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 150),
+            margin: const EdgeInsets.only(bottom: 10),
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: sel ? AppTheme.limeGreen.withOpacity(0.1) : Colors.white.withOpacity(0.03),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: sel ? AppTheme.limeGreen.withOpacity(0.5) : Colors.transparent,
+              ),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  sel ? Icons.check_circle_rounded : Icons.circle_outlined,
+                  color: sel ? AppTheme.limeGreen : Colors.white.withOpacity(0.3),
+                  size: 22,
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        a['nom'] ?? '',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: sel ? FontWeight.bold : FontWeight.w600,
+                          color: sel ? Colors.white : Colors.white.withOpacity(0.8),
+                        ),
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        '${a['duree'] ?? ''} · ${a['prix'] == 0 ? 'Gratuit' : '${a['prix']}€'}',
+                        style: TextStyle(fontSize: 12, color: Colors.white.withOpacity(0.5)),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+  Widget _buildDatesCard() {
+    return Column(
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: GestureDetector(
+                onTap: () => _pickDate(isDebut: true),
+                child: _buildDateBox(
+                  label: 'DÉPART',
+                  date: _formatDate(_dateDebut),
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: GestureDetector(
+                onTap: () => _pickDate(isDebut: false),
+                child: _buildDateBox(
+                  label: 'RETOUR',
+                  date: _formatDate(_dateFin),
+                ),
+              ),
+            ),
+          ],
+        ),
+        if (_nombreJours() > 0) ...[
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: AppTheme.limeGreen.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.flight_takeoff_rounded, color: AppTheme.limeGreen, size: 18),
+                const SizedBox(width: 10),
+                Text(
+                  '${_nombreJours()} jours de voyage',
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: AppTheme.limeGreen,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildDateBox({required String label, required String date}) {
+    final bool isSelected = date != 'Sélectionner';
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppTheme.background,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.grey.shade200),
+        color: Colors.white.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Icon(icon, color: AppTheme.primary, size: 16),
-              const SizedBox(width: 6),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 11,
-                  color: AppTheme.muted,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 11,
+              color: Colors.white.withOpacity(0.5),
+              fontWeight: FontWeight.bold,
+              letterSpacing: 1,
+            ),
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 8),
           Text(
             date,
             style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: date == 'Sélectionner' ? AppTheme.muted : AppTheme.dark,
+              fontSize: 16,
+              fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+              color: isSelected ? Colors.white : Colors.white.withOpacity(0.4),
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────
+// PREMIUM TEXT FIELD COMPONENT
+// ─────────────────────────────────────────────
+class _PremiumTextField extends StatefulWidget {
+  final TextEditingController controller;
+  final String hintText;
+  final IconData icon;
+  final String? suffixText;
+  final int maxLines;
+  final TextInputType? keyboardType;
+  final String? Function(String?)? validator;
+
+  const _PremiumTextField({
+    required this.controller,
+    required this.hintText,
+    required this.icon,
+    this.suffixText,
+    this.maxLines = 1,
+    this.keyboardType,
+    this.validator,
+  });
+
+  @override
+  State<_PremiumTextField> createState() => _PremiumTextFieldState();
+}
+
+class _PremiumTextFieldState extends State<_PremiumTextField> {
+  bool _isFocused = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return Focus(
+      onFocusChange: (focused) => setState(() => _isFocused = focused),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 250),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.05),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: _isFocused ? AppTheme.limeGreen : Colors.transparent,
+            width: 1.5,
+          ),
+          boxShadow: _isFocused
+              ? [BoxShadow(color: AppTheme.limeGreen.withOpacity(0.15), blurRadius: 10)]
+              : [],
+        ),
+        child: TextFormField(
+          controller: widget.controller,
+          maxLines: widget.maxLines,
+          keyboardType: widget.keyboardType,
+          style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w500),
+          decoration: InputDecoration(
+            filled: false, // Prevents global theme from painting it white
+            hintText: widget.hintText,
+            hintStyle: TextStyle(color: Colors.white.withOpacity(0.3), fontWeight: FontWeight.normal),
+            prefixIcon: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 14),
+              child: Icon(widget.icon, color: _isFocused ? AppTheme.limeGreen : Colors.white.withOpacity(0.5)),
+            ),
+            suffixText: widget.suffixText,
+            suffixStyle: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+            contentPadding: const EdgeInsets.all(16),
+            border: InputBorder.none,
+          ),
+          validator: widget.validator,
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────
+// INTERACTIVE CTA BUTTON
+// ─────────────────────────────────────────────
+class _InteractiveButton extends StatefulWidget {
+  final String label;
+  final VoidCallback onTap;
+  final bool loading;
+
+  const _InteractiveButton({required this.label, required this.onTap, this.loading = false});
+
+  @override
+  State<_InteractiveButton> createState() => _InteractiveButtonState();
+}
+
+class _InteractiveButtonState extends State<_InteractiveButton> {
+  bool _isPressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTapDown: (_) => setState(() => _isPressed = true),
+      onTapUp: (_) {
+        setState(() => _isPressed = false);
+        if (!widget.loading) widget.onTap();
+      },
+      onTapCancel: () => setState(() => _isPressed = false),
+      child: AnimatedScale(
+        scale: _isPressed ? 0.96 : 1.0,
+        duration: const Duration(milliseconds: 100),
+        child: Container(
+          width: double.infinity,
+          height: 60,
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [AppTheme.limeGreen, Color(0xFF00C9B1)],
+              begin: Alignment.centerLeft,
+              end: Alignment.centerRight,
+            ),
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: AppTheme.limeGreen.withOpacity(0.3),
+                blurRadius: 20,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
+          child: Center(
+            child: widget.loading
+                ? const SizedBox(
+                    height: 24,
+                    width: 24,
+                    child: CircularProgressIndicator(color: Color(0xFF0F1B2D), strokeWidth: 3),
+                  )
+                : Text(
+                    widget.label,
+                    style: const TextStyle(
+                      color: Color(0xFF0F1B2D),
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+          ),
+        ),
       ),
     );
   }

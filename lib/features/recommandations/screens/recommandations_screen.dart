@@ -1,8 +1,12 @@
+import 'dart:ui';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:voyage_app/core/theme/app_theme.dart';
 import 'package:voyage_app/features/detail/screens/detail_screen.dart';
+import 'package:voyage_app/features/profile/screens/profile_screen.dart';
+import 'package:voyage_app/features/search/screens/search_screen.dart';
+import 'package:voyage_app/features/voyage/screens/mes_voyages_screen.dart';
 
 class RecommandationsScreen extends StatefulWidget {
   const RecommandationsScreen({super.key});
@@ -11,16 +15,42 @@ class RecommandationsScreen extends StatefulWidget {
   State<RecommandationsScreen> createState() => _RecommandationsScreenState();
 }
 
-class _RecommandationsScreenState extends State<RecommandationsScreen> {
+class _RecommandationsScreenState extends State<RecommandationsScreen> with SingleTickerProviderStateMixin {
   final _supabase = Supabase.instance.client;
   List<Map<String, dynamic>> _recommandations = [];
   Map<String, dynamic>? _prefs;
   bool _loading = true;
 
+  late AnimationController _animController;
+  late Animation<double> _fadeHeader;
+  late Animation<double> _fadeInsight;
+  late Animation<double> _fadeCards;
+  late Animation<Offset> _slideCards;
+
   @override
   void initState() {
     super.initState();
+    
+    _animController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1200),
+    );
+
+    _fadeHeader = CurvedAnimation(parent: _animController, curve: const Interval(0.0, 0.4, curve: Curves.easeOut));
+    _fadeInsight = CurvedAnimation(parent: _animController, curve: const Interval(0.2, 0.6, curve: Curves.easeOut));
+    _fadeCards = CurvedAnimation(parent: _animController, curve: const Interval(0.4, 1.0, curve: Curves.easeOut));
+    
+    _slideCards = Tween<Offset>(begin: const Offset(0, 0.1), end: Offset.zero).animate(
+      CurvedAnimation(parent: _animController, curve: const Interval(0.4, 1.0, curve: Curves.easeOutQuart)),
+    );
+
     _loadAndRecommend();
+  }
+
+  @override
+  void dispose() {
+    _animController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadAndRecommend() async {
@@ -49,19 +79,17 @@ class _RecommandationsScreenState extends State<RecommandationsScreen> {
 
       final villesList = List<Map<String, dynamic>>.from(villes);
 
-      // Charger activités pour matcher les centres d'intérêt
+      // Charger activités
       final activites = await _supabase
           .from('activites')
           .select('id_ville, categorie');
 
       final activitesList = List<Map<String, dynamic>>.from(activites);
 
-      // Algorithme de scoring
       final centresInteret = List<String>.from(prefs['centres_interet'] ?? []);
       final budget = prefs['budget'] ?? '';
       final typeVoyage = prefs['type_voyage'] ?? '';
 
-      // Map des catégories d'activités par ville
       final Map<String, List<String>> activitesParVille = {};
       for (final a in activitesList) {
         final idVille = a['id_ville'].toString();
@@ -69,15 +97,12 @@ class _RecommandationsScreenState extends State<RecommandationsScreen> {
         activitesParVille[idVille]!.add(a['categorie'] ?? '');
       }
 
-      // Calculer le score pour chaque ville
       final scored = villesList.map((ville) {
         int score = 0;
         final idVille = ville['id'].toString();
 
-        // +3 si le budget correspond
         if (ville['niveau_budget'] == budget) score += 3;
 
-        // +2 par centre d'intérêt qui correspond aux activités
         final cats = activitesParVille[idVille] ?? [];
         for (final interet in centresInteret) {
           if (cats.any(
@@ -89,24 +114,29 @@ class _RecommandationsScreenState extends State<RecommandationsScreen> {
           }
         }
 
-        // +2 si type de voyage correspond
         final continent = ville['pays']?['continent'] ?? '';
         if (typeVoyage == 'Solo' && continent == 'Asie') score += 1;
         if (typeVoyage == 'Couple' &&
-            (ville['niveau_budget'] == 'Élevé' ||
-                ville['niveau_budget'] == 'Moyen'))
+            (ville['niveau_budget'] == 'Élevé' || ville['niveau_budget'] == 'Moyen')) {
           score += 1;
+        }
         if (typeVoyage == 'Famille' && ville['niveau_budget'] == 'Faible') {
           score += 1;
         }
 
-        // +1 par point de popularité
         score += ((ville['popularite'] ?? 0) as num).round();
 
-        return {...ville, 'score': score};
+        // Generer l'insight dynamique de l'IA
+        String aiInsight = _generateDynamicInsight(
+          villeNom: ville['nom'],
+          villeBudget: ville['niveau_budget'] ?? '',
+          userBudget: budget,
+          typeVoyage: typeVoyage,
+        );
+
+        return {...ville, 'score': score, 'ai_insight': aiInsight};
       }).toList();
 
-      // Trier par score et prendre les 3 premiers
       scored.sort((a, b) => (b['score'] as int).compareTo(a['score'] as int));
       final top3 = scored.take(3).toList();
 
@@ -116,6 +146,7 @@ class _RecommandationsScreenState extends State<RecommandationsScreen> {
           _prefs = prefs;
           _loading = false;
         });
+        _animController.forward();
       }
     } catch (e) {
       debugPrint('Erreur recommandations: $e');
@@ -123,388 +154,680 @@ class _RecommandationsScreenState extends State<RecommandationsScreen> {
     }
   }
 
+  String _generateDynamicInsight({
+    required String villeNom,
+    required String villeBudget,
+    required String userBudget,
+    required String typeVoyage,
+  }) {
+    if (villeBudget == userBudget && typeVoyage == 'Couple') {
+      return '🎯 Idéal pour un repaire romantique dans votre budget.';
+    } else if (typeVoyage == 'Famille') {
+      return '👨‍👩‍👧‍👦 Parfait pour créer d\'inoubliables souvenirs en famille.';
+    } else if (villeBudget == userBudget) {
+      return '💸 Une excellente adéquation avec vos restrictions budgétaires.';
+    } else {
+      return '✨ Une destination populaire qui coche bon nombre de vos critères !';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.background,
-      body: CustomScrollView(
-        slivers: [
-          SliverToBoxAdapter(
-            child: Container(
-              padding: const EdgeInsets.fromLTRB(24, 56, 24, 28),
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [Color(0xFF00C9B1), Color(0xFF7C3AED)],
-                ),
-                borderRadius: BorderRadius.only(
-                  bottomLeft: Radius.circular(32),
-                  bottomRight: Radius.circular(32),
-                ),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  GestureDetector(
-                    onTap: () => Navigator.pop(context),
-                    child: Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: const Icon(Icons.arrow_back, color: Colors.white, size: 20),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  const Text(
-                    '🤖 Recommandations IA',
-                    style: TextStyle(
-                      fontSize: 26,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  const Text(
-                    'Destinations choisies pour vous',
-                    style: TextStyle(fontSize: 14, color: Colors.white70),
-                  ),
-                  if (_prefs != null) ...[
-                    const SizedBox(height: 16),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: [
-                        _buildChip('💰 ${_prefs!['budget']}'),
-                        _buildChip('👥 ${_prefs!['type_voyage']}'),
-                        _buildChip('📅 ${_prefs!['duree_sejour']}'),
-                        ...List<String>.from(
-                          _prefs!['centres_interet'] ?? [],
-                        ).map((i) => _buildChip('✨ $i')),
-                      ],
-                    ),
-                  ],
+      backgroundColor: AppTheme.darkNavy,
+      bottomNavigationBar: _buildBottomNav(),
+      body: Stack(
+        children: [
+          // Background Gradient
+          Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Color(0xFF0F1B2D),
+                  Color(0xFF0A1628),
+                  Color(0xFF0D1F3C), // Slight depth
                 ],
               ),
             ),
           ),
-
-          if (_loading)
-            const SliverToBoxAdapter(
-              child: Padding(
-                padding: EdgeInsets.only(top: 80),
-                child: Column(
-                  children: [
-                    CircularProgressIndicator(color: AppTheme.primary),
-                    SizedBox(height: 16),
-                    Text(
-                      'Analyse de votre profil...',
-                      style: TextStyle(color: AppTheme.muted, fontSize: 14),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-
-          if (!_loading && _recommandations.isNotEmpty) ...[
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
-                child: Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: AppTheme.primary.withValues(alpha: 0.08),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: AppTheme.primary.withValues(alpha: 0.3),
-                    ),
-                  ),
-                  child: const Row(
-                    children: [
-                      Text('🤖', style: TextStyle(fontSize: 24)),
-                      SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          'Basé sur vos préférences, voici les destinations qui vous correspondent le mieux !',
+          
+          SafeArea(
+            child: _loading
+                ? const Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        CircularProgressIndicator(color: AppTheme.limeGreen),
+                        SizedBox(height: 24),
+                        Text(
+                          'Analyse IA en cours...',
                           style: TextStyle(
-                            fontSize: 14,
-                            color: AppTheme.dark,
-                            height: 1.5,
+                            color: Colors.white70,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                : CustomScrollView(
+                    physics: const BouncingScrollPhysics(),
+                    slivers: [
+                      // HERO HEADER
+                      SliverToBoxAdapter(
+                        child: FadeTransition(
+                          opacity: _fadeHeader,
+                          child: _buildHeroHeader(),
+                        ),
+                      ),
+                      
+                      // AI INSIGHT EXPLANATION
+                      if (_recommandations.isNotEmpty)
+                        SliverToBoxAdapter(
+                          child: FadeTransition(
+                            opacity: _fadeInsight,
+                            child: Padding(
+                              padding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
+                              child: _buildInsightCard(),
+                            ),
+                          ),
+                        ),
+
+                      // RECOMMENDATION CARDS
+                      SliverPadding(
+                        padding: const EdgeInsets.fromLTRB(20, 10, 20, 40),
+                        sliver: SliverList(
+                          delegate: SliverChildBuilderDelegate(
+                            (context, index) {
+                              return FadeTransition(
+                                opacity: _fadeCards,
+                                child: SlideTransition(
+                                  position: _slideCards,
+                                  child: Padding(
+                                    padding: const EdgeInsets.only(bottom: 24),
+                                    child: _PremiumDestCard(
+                                      ville: _recommandations[index],
+                                      rank: index + 1,
+                                    ),
+                                  ),
+                                ),
+                              );
+                            },
+                            childCount: _recommandations.length,
                           ),
                         ),
                       ),
                     ],
                   ),
-                ),
-              ),
-            ),
-            SliverPadding(
-              padding: const EdgeInsets.all(20),
-              sliver: SliverList(
-                delegate: SliverChildBuilderDelegate(
-                  (_, i) => _buildRecoCard(_recommandations[i], i),
-                  childCount: _recommandations.length,
-                ),
-              ),
-            ),
-          ],
-
-          if (!_loading && _recommandations.isEmpty)
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.only(top: 80),
-                child: Column(
-                  children: [
-                    const Text('🔍', style: TextStyle(fontSize: 60)),
-                    const SizedBox(height: 16),
-                    const Text(
-                      'Aucune recommandation',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: AppTheme.dark,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Complétez vos préférences dans votre profil',
-                      style: TextStyle(color: AppTheme.muted, fontSize: 14),
-                    ),
-                    const SizedBox(height: 24),
-                    ElevatedButton(
-                      onPressed: _loadAndRecommend,
-                      child: const Text('🔄 Réessayer'),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-
-          const SliverToBoxAdapter(child: SizedBox(height: 30)),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildChip(String label) {
+  // ─────────────────────────────────────────────
+  // HERO HEADER
+  // ─────────────────────────────────────────────
+  Widget _buildHeroHeader() {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.2),
-        borderRadius: BorderRadius.circular(50),
-      ),
-      child: Text(
-        label,
-        style: const TextStyle(
-          fontSize: 12,
-          color: Colors.white,
-          fontWeight: FontWeight.w500,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildRecoCard(Map<String, dynamic> ville, int index) {
-    final medals = ['🥇', '🥈', '🥉'];
-    final budget = ville['niveau_budget'] ?? '';
-    final budgetColor = budget == 'Faible'
-        ? const Color(0xFF4CAF50)
-        : budget == 'Élevé'
-        ? const Color(0xFFFF6B6B)
-        : const Color(0xFFFFD97D);
-
-    return GestureDetector(
-      onTap: () => Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => DetailScreen(ville: ville)),
-      ),
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(22),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.08),
-              blurRadius: 16,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Column(
-          children: [
-            ClipRRect(
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(22),
-                topRight: Radius.circular(22),
+      padding: const EdgeInsets.fromLTRB(24, 20, 24, 20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Align(
+            alignment: Alignment.centerLeft,
+            child: GestureDetector(
+              onTap: () => Navigator.pop(context),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(14),
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                  child: Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.08),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: Colors.white.withOpacity(0.1)),
+                    ),
+                    child: Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white.withOpacity(0.9), size: 18),
+                  ),
+                ),
               ),
-              child: Stack(
+            ),
+          ),
+          const SizedBox(height: 24),
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF7C3AED), Color(0xFF00C9B1)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF00C9B1).withOpacity(0.3),
+                      blurRadius: 16,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: const Icon(Icons.auto_awesome_rounded, color: Colors.white, size: 24),
+              ),
+              const SizedBox(width: 14),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Recommandations IA',
+                      style: TextStyle(
+                        fontSize: 26,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                        letterSpacing: -0.5,
+                      ),
+                    ),
+                    SizedBox(height: 2),
+                    Text(
+                      'Destinations choisies pour vous',
+                      style: TextStyle(fontSize: 14, color: Colors.white70),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          if (_prefs != null) ...[
+            const SizedBox(height: 24),
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              physics: const BouncingScrollPhysics(),
+              child: Row(
                 children: [
-                  CachedNetworkImage(
-                    imageUrl: ville['image_url'] ?? '',
-                    height: 160,
-                    width: double.infinity,
-                    fit: BoxFit.cover,
-                    placeholder: (_, __) => Container(
-                      height: 160,
-                      color: AppTheme.primary.withValues(alpha: 0.15),
-                    ),
-                    errorWidget: (_, __, ___) => Container(
-                      height: 160,
-                      color: AppTheme.primary.withValues(alpha: 0.15),
-                      child: const Icon(
-                        Icons.image_outlined,
-                        color: AppTheme.primary,
-                        size: 40,
-                      ),
-                    ),
-                  ),
-                  Positioned(
-                    top: 12,
-                    left: 12,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.black.withValues(alpha: 0.5),
-                        borderRadius: BorderRadius.circular(50),
-                      ),
-                      child: Text(
-                        '${medals[index]} Choix ${index + 1}',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ),
-                  Positioned(
-                    top: 12,
-                    right: 12,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppTheme.primary.withValues(alpha: 0.9),
-                        borderRadius: BorderRadius.circular(50),
-                      ),
-                      child: Text(
-                        'Score: ${ville['score']}',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
+                  _buildGlassPref('💰', _prefs!['budget']),
+                  const SizedBox(width: 8),
+                  _buildGlassPref('👥', _prefs!['type_voyage']),
+                  const SizedBox(width: 8),
+                  _buildGlassPref('📅', _prefs!['duree_sejour']),
+                  ...List<String>.from(_prefs!['centres_interet'] ?? []).map(
+                    (i) => Padding(
+                      padding: const EdgeInsets.only(left: 8),
+                      child: _buildGlassPref('✨', i),
                     ),
                   ),
                 ],
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildGlassPref(String emoji, String text) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(20),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.06),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: Colors.white.withOpacity(0.1)),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(emoji, style: const TextStyle(fontSize: 14)),
+              const SizedBox(width: 6),
+              Text(text, style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w500)),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ─────────────────────────────────────────────
+  // AI INSIGHT CARD
+  // ─────────────────────────────────────────────
+  Widget _buildInsightCard() {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(16),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: const Color(0xFF162544).withOpacity(0.4),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.white.withOpacity(0.05)),
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppTheme.limeGreen.withOpacity(0.15),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.psychology_rounded, color: AppTheme.limeGreen, size: 20),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Analyse terminée',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 15,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Basé sur vos préférences méticuleuses, voici le classement exact des destinations qui correspondent parfaitement à votre profil de voyage.',
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.6),
+                        fontSize: 13,
+                        height: 1.4,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ─────────────────────────────────────────────
+  // BOTTOM NAVIGATION BAR
+  // ─────────────────────────────────────────────
+  Widget _buildBottomNav() {
+    return Container(
+      padding: EdgeInsets.only(bottom: MediaQuery.of(context).padding.bottom + 8, top: 12),
+      decoration: BoxDecoration(
+        color: const Color(0xFF0A1628), // Same as bottom of background gradient
+        border: Border(top: BorderSide(color: Colors.white.withOpacity(0.05))),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: [
+          _buildNavItem(index: 0, icon: Icons.home_rounded, activeIcon: Icons.home_rounded, label: 'Home'),
+          _buildNavItem(index: 1, icon: Icons.explore_outlined, activeIcon: Icons.explore, label: 'Explorer'),
+          _buildNavAIButton(),
+          _buildNavItem(index: 3, icon: Icons.luggage_outlined, activeIcon: Icons.luggage, label: 'Mes Voyages'),
+          _buildNavItem(index: 4, icon: Icons.person_outline_rounded, activeIcon: Icons.person_rounded, label: 'Profil'),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNavItem({required int index, required IconData icon, required IconData activeIcon, required String label}) {
+    // Current screen is Recommandations, middle button. There is no traditional active bottom nav item here.
+    return GestureDetector(
+      onTap: () {
+        if (index == 0) {
+          Navigator.pop(context);
+        } else if (index == 1) {
+          Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const SearchScreen()));
+        } else if (index == 3) {
+          Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const MesVoyagesScreen()));
+        } else if (index == 4) {
+          Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const ProfileScreen()));
+        }
+      },
+      behavior: HitTestBehavior.opaque,
+      child: SizedBox(
+        width: 60,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              child: Icon(
+                icon,
+                color: Colors.white.withOpacity(0.4),
+                size: 22,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: TextStyle(
+                color: Colors.white.withOpacity(0.35),
+                fontSize: 10,
+                fontWeight: FontWeight.w400,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNavAIButton() {
+    return Container(
+      width: 56,
+      height: 56,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF7C3AED), Color(0xFF9F5AFF), Color(0xFFB47AFF)],
+        ),
+        boxShadow: [
+          BoxShadow(color: const Color(0xFF7C3AED).withOpacity(0.4), blurRadius: 16, offset: const Offset(0, 4)),
+          BoxShadow(color: Colors.white.withOpacity(0.2), spreadRadius: 2, blurRadius: 4), // Highlight to show it's active
+        ],
+      ),
+      child: const Center(
+        child: Icon(Icons.auto_awesome, color: Colors.white, size: 26),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────
+// PREMIUM DESTINATION CARD (INTERACTIVE)
+// ─────────────────────────────────────────────
+class _PremiumDestCard extends StatefulWidget {
+  final Map<String, dynamic> ville;
+  final int rank;
+
+  const _PremiumDestCard({required this.ville, required this.rank});
+
+  @override
+  State<_PremiumDestCard> createState() => _PremiumDestCardState();
+}
+
+class _PremiumDestCardState extends State<_PremiumDestCard> {
+  bool _isHovered = false;
+
+  void _navigateToDetail() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => DetailScreen(ville: widget.ville),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final imageUrl = widget.ville['image_url'] as String?;
+    final score = widget.ville['score'] ?? 0;
+    final pays = widget.ville['pays']?['nom'] ?? '';
+    final continent = widget.ville['pays']?['continent'] ?? '';
+    final aiInsight = widget.ville['ai_insight'] ?? 'Une destination idéale.';
+
+    return GestureDetector(
+      onTapDown: (_) => setState(() => _isHovered = true),
+      onTapUp: (_) {
+        setState(() => _isHovered = false);
+        _navigateToDetail();
+      },
+      onTapCancel: () => setState(() => _isHovered = false),
+      child: AnimatedScale(
+        scale: _isHovered ? 0.96 : 1.0,
+        duration: const Duration(milliseconds: 150),
+        curve: Curves.easeOutCubic,
+        child: Container(
+          height: 380, // High-end tall card
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(28),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.3),
+                blurRadius: 20,
+                offset: const Offset(0, 10),
+              ),
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(28),
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                // 1. Background Image
+                if (imageUrl != null && imageUrl.isNotEmpty)
+                  CachedNetworkImage(
+                    imageUrl: imageUrl,
+                    fit: BoxFit.cover,
+                    placeholder: (context, url) => Container(color: Colors.white.withOpacity(0.05)),
+                    errorWidget: (context, url, error) => Container(color: Colors.white.withOpacity(0.1)),
+                  )
+                else
+                  Container(color: Colors.white.withOpacity(0.05)),
+
+                // 2. Multi-layer Dark Gradient
+                Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Colors.black.withOpacity(0.2), // Slight top dim for badges
+                        Colors.transparent,           // Clear center
+                        Colors.black.withOpacity(0.7), // Bottom text legibility
+                        Colors.black.withOpacity(0.95), // Deep bottom for AI insight
+                      ],
+                      stops: const [0.0, 0.3, 0.7, 1.0],
+                    ),
+                  ),
+                ),
+
+                // 3. Top Badges
+                Positioned(
+                  top: 16,
+                  left: 16,
+                  right: 16,
+                  child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        ville['nom'] ?? '',
-                        style: const TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: AppTheme.dark,
+                      // Choice Badge
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(20),
+                        child: BackdropFilter(
+                          filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.15),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Row(
+                              children: [
+                                Text('${widget.rank == 1 ? '👑' : '🎯'}', style: const TextStyle(fontSize: 14)),
+                                const SizedBox(width: 6),
+                                Text(
+                                  'Choix #${widget.rank}',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                         ),
                       ),
+                      // Score Badge (Glowing green)
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: AppTheme.limeGreen,
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppTheme.limeGreen.withOpacity(0.4),
+                              blurRadius: 12,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.bolt_rounded, color: Color(0xFF0F1B2D), size: 16),
+                            const SizedBox(width: 4),
+                            Text(
+                              'Score: $score',
+                              style: const TextStyle(
+                                color: Color(0xFF0F1B2D),
+                                fontSize: 13,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                // 4. Floating Favorite Icon (optional visual balance)
+                Positioned(
+                  top: 70,
+                  right: 16,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(20),
+                    child: BackdropFilter(
+                      filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+                      child: Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withOpacity(0.3),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.favorite_border_rounded, color: Colors.white, size: 20),
+                      ),
+                    ),
+                  ),
+                ),
+
+                // 5. Bottom Content (Title, Info, AI text)
+                Positioned(
+                  bottom: 20,
+                  left: 20,
+                  right: 20,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        widget.ville['nom'] ?? 'Inconnu',
+                        style: const TextStyle(
+                          fontSize: 32,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                          height: 1.1,
+                          letterSpacing: -0.5,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
                       Row(
                         children: [
-                          const Icon(
-                            Icons.star,
-                            color: Color(0xFFFFD97D),
-                            size: 16,
-                          ),
-                          const SizedBox(width: 4),
+                          Icon(Icons.location_on_rounded, color: AppTheme.limeGreen.withOpacity(0.8), size: 16),
+                          const SizedBox(width: 6),
                           Text(
-                            '${ville['popularite'] ?? ''}',
-                            style: const TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                              color: AppTheme.dark,
+                            '$pays • $continent',
+                            style: TextStyle(
+                              fontSize: 15,
+                              color: Colors.white.withOpacity(0.8),
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      
+                      // Stat Pills Row
+                      Row(
+                        children: [
+                          _buildStatBadge(Icons.star_rounded, '4.9', Colors.orangeAccent),
+                          const SizedBox(width: 8),
+                          _buildStatBadge(Icons.attach_money_rounded, widget.ville['niveau_budget'] ?? 'Moyen', Colors.white),
+                          const SizedBox(width: 8),
+                          _buildStatBadge(Icons.wb_sunny_rounded, '24°C', Colors.white), // Stub for display
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      
+                      // Divider
+                      Container(height: 1, width: double.infinity, color: Colors.white.withOpacity(0.1)),
+                      const SizedBox(height: 16),
+                      
+                      // AI Smart Context Text
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Icon(Icons.auto_awesome_rounded, color: AppTheme.limeGreen.withOpacity(0.8), size: 16),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              aiInsight,
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: Colors.white.withOpacity(0.7),
+                                fontStyle: FontStyle.italic,
+                                height: 1.3,
+                              ),
                             ),
                           ),
                         ],
                       ),
                     ],
                   ),
-                  const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      const Icon(
-                        Icons.location_on,
-                        color: AppTheme.muted,
-                        size: 14,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        '${ville['pays']?['nom'] ?? ''} · ${ville['pays']?['continent'] ?? ''}',
-                        style: TextStyle(fontSize: 13, color: AppTheme.muted),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: budgetColor.withValues(alpha: 0.15),
-                          borderRadius: BorderRadius.circular(50),
-                        ),
-                        child: Text(
-                          budget,
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                            color: budgetColor,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppTheme.primary.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(50),
-                        ),
-                        child: Text(
-                          ville['temperature'] ?? '',
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                            color: AppTheme.primary,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
-          ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatBadge(IconData icon, String label, Color iconColor) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(12),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Row(
+            children: [
+              Icon(icon, color: iconColor, size: 14),
+              const SizedBox(width: 4),
+              Text(
+                label,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
