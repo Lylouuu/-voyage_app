@@ -3,15 +3,15 @@ import 'package:flutter/material.dart';
 /// Thème premium clair (Light Mode) avec design fluide pour le panneau d'administration
 class AdminTheme {
   // ── Couleurs principales ────────────────────────────────────
-  static const Color background = Color(0xFFF4F7FE);
-  static const Color surface = Color(0xFFFFFFFF);
-  static const Color surfaceLight = Color(0xFFF8FAFC);
-  static const Color surfaceBorder = Color(0xFFE2E8F0);
+  static const Color background = Color(0xFF0A1628); // Dark Navy
+  static const Color surface = Color(0xFF162544); // Dark Navy Light
+  static const Color surfaceLight = Color(0xFF1E325A); // Slightly lighter
+  static const Color surfaceBorder = Color(0x20FFFFFF); // Subtle white border
 
-  // Accents (Teal / Cyan moderne)
-  static const Color accent = Color(0xFF00ACC1); // Teal principal
-  static const Color accentLight = Color(0xFF4DD0E1);
-  static const Color accentSoft = Color(0x1A00ACC1);
+  // Accents (Lime Green moderne)
+  static const Color accent = Color(0xFFCBF266); // Lime Green
+  static const Color accentLight = Color(0xFFDDF587);
+  static const Color accentSoft = Color(0x1ACBF266);
 
   // Sémantiques
   static const Color success = Color(0xFF00C9A7);
@@ -24,15 +24,15 @@ class AdminTheme {
   static const Color infoSoft = Color(0x1A4ECDC4);
 
   // Texte
-  static const Color textPrimary = Color(0xFF2B3674); // Bleu nuit pour remplacer le noir trop lourd
-  static const Color textSecondary = Color(0xFFA3AED0);
-  static const Color textMuted = Color(0xFFB0BBD5);
+  static const Color textPrimary = Color(0xFFFFFFFF); // Blanc
+  static const Color textSecondary = Color(0xB3FFFFFF); // Blanc 70%
+  static const Color textMuted = Color(0x80FFFFFF); // Blanc 50%
 
   // Gradient principal
   static const LinearGradient primaryGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [Color(0xFF00ACC1), Color(0xFF4ECDC4)],
+    colors: [Color(0xFFCBF266), Color(0xFFA5D13B)],
   );
 
   static const LinearGradient dangerGradient = LinearGradient(
@@ -50,7 +50,7 @@ class AdminTheme {
   // ── Ombres (Très douces pour l'effet light) ─────────────────
   static List<BoxShadow> shadowSm = [
     BoxShadow(
-      color: const Color(0xFF111126).withOpacity(0.04),
+      color: const Color(0xFF000000).withOpacity(0.15),
       blurRadius: 10,
       offset: const Offset(0, 4),
     ),
@@ -58,7 +58,7 @@ class AdminTheme {
 
   static List<BoxShadow> shadowMd = [
     BoxShadow(
-      color: const Color(0xFF111126).withOpacity(0.06),
+      color: const Color(0xFF000000).withOpacity(0.25),
       blurRadius: 18,
       offset: const Offset(0, 8),
     ),
@@ -66,7 +66,7 @@ class AdminTheme {
 
   static List<BoxShadow> shadowLg = [
     BoxShadow(
-      color: const Color(0xFF00ACC1).withOpacity(0.12),
+      color: const Color(0xFFCBF266).withOpacity(0.12),
       blurRadius: 24,
       offset: const Offset(0, 10),
     ),
@@ -138,14 +138,14 @@ class AdminTheme {
       hintStyle: const TextStyle(color: textMuted, fontSize: 13),
       prefixIcon: icon != null ? Icon(icon, color: accent, size: 22) : null,
       filled: true,
-      fillColor: surfaceLight,
+      fillColor: Colors.transparent,
       border: OutlineInputBorder(
         borderRadius: radiusMd,
-        borderSide: BorderSide.none, // Sans bordure pour plus de fluidité
+        borderSide: BorderSide(color: surfaceBorder),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: radiusMd,
-        borderSide: const BorderSide(color: Colors.transparent),
+        borderSide: BorderSide(color: surfaceBorder),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: radiusMd,
@@ -162,7 +162,7 @@ class AdminTheme {
   // ── Button styles (Boutons modernes et arrondis) ────────────
   static ButtonStyle primaryButton = ElevatedButton.styleFrom(
     backgroundColor: accent,
-    foregroundColor: Colors.white,
+    foregroundColor: const Color(0xFF0F1B2D), // Dark text on lime green button
     padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 16),
     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(100)), // Fluid button
     elevation: 4,

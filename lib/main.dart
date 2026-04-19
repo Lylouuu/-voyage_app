@@ -6,6 +6,7 @@ import 'package:voyage_app/features/auth/screens/auth_screen.dart';
 import 'package:voyage_app/features/home/screens/home_screen.dart';
 import 'package:voyage_app/features/admin/screens/admin_panel.dart';
 import 'package:voyage_app/features/admin/services/admin_service.dart';
+import 'package:voyage_app/features/splash/screens/splash_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -26,7 +27,7 @@ class MyApp extends StatelessWidget {
       title: 'Voyage App',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.theme,
-      home: const AuthWrapper(),
+      home: const SplashScreen(),
     );
   }
 }

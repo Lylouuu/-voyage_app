@@ -125,52 +125,60 @@ class _SearchScreenState extends State<SearchScreen> with SingleTickerProviderSt
           ),
           // Content
           SafeArea(
-            child: Column(
-              children: [
-                _buildHeroHeader(),
-                _buildFilters(),
-                _buildResultsCount(),
-                Expanded(
-                  child: _loading
-                      ? Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.all(18),
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withOpacity(0.05),
-                                  borderRadius: BorderRadius.circular(18),
-                                ),
-                                child: const CircularProgressIndicator(
-                                  color: AppTheme.limeGreen,
-                                  strokeWidth: 2.5,
-                                ),
-                              ),
-                              const SizedBox(height: 16),
-                              Text(
-                                'Chargement des destinations...',
-                                style: TextStyle(
-                                  color: Colors.white.withOpacity(0.4),
-                                  fontSize: 13,
-                                ),
-                              ),
-                            ],
-                          ),
-                        )
-                      : _results.isEmpty
-                          ? _buildEmptyState()
-                          : FadeTransition(
-                              opacity: _fadeAnimation,
-                              child: ListView.builder(
-                                controller: _scrollController,
-                                padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
-                                physics: const BouncingScrollPhysics(),
-                                itemCount: _results.length,
-                                itemBuilder: (_, i) => _buildResultCard(_results[i], i),
-                              ),
+            bottom: false,
+            child: CustomScrollView(
+              controller: _scrollController,
+              physics: const BouncingScrollPhysics(),
+              slivers: [
+                SliverToBoxAdapter(child: _buildHeroHeader()),
+                SliverToBoxAdapter(child: _buildFilters()),
+                SliverToBoxAdapter(child: _buildResultsCount()),
+                if (_loading)
+                  SliverFillRemaining(
+                    hasScrollBody: false,
+                    child: Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(18),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.05),
+                              borderRadius: BorderRadius.circular(18),
                             ),
-                ),
+                            child: const CircularProgressIndicator(
+                              color: AppTheme.limeGreen,
+                              strokeWidth: 2.5,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            'Chargement des destinations...',
+                            style: TextStyle(
+                              color: Colors.white.withOpacity(0.4),
+                              fontSize: 13,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  )
+                else if (_results.isEmpty)
+                  SliverFillRemaining(
+                    hasScrollBody: false,
+                    child: _buildEmptyState(),
+                  )
+                else
+                  SliverFadeTransition(
+                    opacity: _fadeAnimation,
+                    sliver: SliverPadding(
+                      padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+                      sliver: SliverList.builder(
+                        itemCount: _results.length,
+                        itemBuilder: (_, i) => _buildResultCard(_results[i], i),
+                      ),
+                    ),
+                  ),
               ],
             ),
           ),

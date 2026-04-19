@@ -1,5 +1,6 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:voyage_app/core/theme/app_theme.dart';
 import 'package:voyage_app/features/admin/screens/admin_login_screen.dart';
@@ -21,10 +22,35 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Map<String, dynamic>? _prefs;
   bool _loading = true;
 
+  // Settings state
+  bool _notifPush = true;
+  bool _notifEmail = true;
+  bool _notifPrice = false;
+  String _selectedLang = 'Français';
+
   @override
   void initState() {
     super.initState();
+    _loadLocalSettings();
     _loadData();
+  }
+
+  Future<void> _loadLocalSettings() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (mounted) {
+      setState(() {
+        _notifPush = prefs.getBool('notifPush') ?? true;
+        _notifEmail = prefs.getBool('notifEmail') ?? true;
+        _notifPrice = prefs.getBool('notifPrice') ?? false;
+        _selectedLang = prefs.getString('selectedLang') ?? 'Français';
+      });
+    }
+  }
+
+  Future<void> _saveSetting(String key, dynamic value) async {
+    final prefs = await SharedPreferences.getInstance();
+    if (value is bool) await prefs.setBool(key, value);
+    if (value is String) await prefs.setString(key, value);
   }
 
   Future<void> _loadData() async {
@@ -384,11 +410,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
         ),
         const SizedBox(height: 16),
-        _InteractiveSettingCard(icon: Icons.notifications_none_rounded, label: 'Notifications', onTap: () {}),
+        _InteractiveSettingCard(icon: Icons.notifications_none_rounded, label: 'Notifications', onTap: _showNotificationsFilters),
         const SizedBox(height: 10),
-        _InteractiveSettingCard(icon: Icons.language_rounded, label: 'Langue & Région', onTap: () {}),
+        _InteractiveSettingCard(icon: Icons.language_rounded, label: 'Langue & Région', onTap: _showLanguageFilters),
         const SizedBox(height: 10),
-        _InteractiveSettingCard(icon: Icons.help_outline_rounded, label: 'Aide & Support', onTap: () {}),
+        _InteractiveSettingCard(icon: Icons.help_outline_rounded, label: 'Aide & Support', onTap: _showHelpBottomSheet),
         const SizedBox(height: 10),
         _InteractiveSettingCard(
           icon: Icons.admin_panel_settings_outlined,
@@ -400,6 +426,195 @@ class _ProfileScreenState extends State<ProfileScreen> {
             );
           },
         ),
+      ],
+    );
+  }
+
+  // ─────────────────────────────────────────────
+  // BOTTOM SHEETS
+  // ─────────────────────────────────────────────
+
+  void _showNotificationsFilters() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setModalState) {
+          return Container(
+            padding: const EdgeInsets.all(24),
+            decoration: const BoxDecoration(
+              color: Color(0xFF162544),
+              borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), borderRadius: BorderRadius.circular(10)),
+                  ),
+                ),
+                const SizedBox(height: 24),
+                const Text('Notifications', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white)),
+                const SizedBox(height: 24),
+                _buildToggleRow('Notifications Push', 'Alertes sur votre téléphone', _notifPush, (v) {
+                  setModalState(() => _notifPush = v);
+                  setState(() => _notifPush = v);
+                  _saveSetting('notifPush', v);
+                }),
+                const SizedBox(height: 16),
+                _buildToggleRow('Emails de voyage', 'Récapitulatifs et conseils', _notifEmail, (v) {
+                  setModalState(() => _notifEmail = v);
+                  setState(() => _notifEmail = v);
+                  _saveSetting('notifEmail', v);
+                }),
+                const SizedBox(height: 16),
+                _buildToggleRow('Alertes de prix', 'Promotions sur vos favoris', _notifPrice, (v) {
+                  setModalState(() => _notifPrice = v);
+                  setState(() => _notifPrice = v);
+                  _saveSetting('notifPrice', v);
+                }),
+                const SizedBox(height: 32),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildToggleRow(String title, String subtitle, bool value, ValueChanged<bool> onChanged) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(title, style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600)),
+            const SizedBox(height: 4),
+            Text(subtitle, style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 13)),
+          ],
+        ),
+        Switch(
+          value: value,
+          onChanged: onChanged,
+          activeColor: AppTheme.limeGreen,
+          activeTrackColor: AppTheme.limeGreen.withOpacity(0.3),
+          inactiveThumbColor: Colors.white.withOpacity(0.5),
+          inactiveTrackColor: Colors.white.withOpacity(0.1),
+        ),
+      ],
+    );
+  }
+
+  void _showLanguageFilters() {
+    final languages = ['Français', 'English', 'Español', 'العربية'];
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setModalState) {
+          return Container(
+            padding: const EdgeInsets.all(24),
+            decoration: const BoxDecoration(
+              color: Color(0xFF162544),
+              borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), borderRadius: BorderRadius.circular(10)),
+                  ),
+                ),
+                const SizedBox(height: 24),
+                const Text('Langue', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white)),
+                const SizedBox(height: 16),
+                Column(
+                  children: languages.map((lang) {
+                    final isSelected = _selectedLang == lang;
+                    return GestureDetector(
+                      onTap: () {
+                        setModalState(() => _selectedLang = lang);
+                        setState(() => _selectedLang = lang);
+                        _saveSetting('selectedLang', lang);
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        color: Colors.transparent,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(lang, style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: isSelected ? FontWeight.bold : FontWeight.normal)),
+                            if (isSelected) const Icon(Icons.check_circle_rounded, color: AppTheme.limeGreen),
+                          ],
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                ),
+                const SizedBox(height: 32),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  void _showHelpBottomSheet() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(24),
+        decoration: const BoxDecoration(
+          color: Color(0xFF162544),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), borderRadius: BorderRadius.circular(10)),
+              ),
+            ),
+            const SizedBox(height: 24),
+            const Text('Aide & Support', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white)),
+            const SizedBox(height: 24),
+            _buildHelpRow(Icons.question_answer_rounded, 'Foire aux questions (FAQ)'),
+            const SizedBox(height: 20),
+            _buildHelpRow(Icons.email_rounded, 'Nous contacter'),
+            const SizedBox(height: 20),
+            _buildHelpRow(Icons.description_rounded, 'Conditions d\'utilisation'),
+            const SizedBox(height: 32),
+            Center(child: Text('Version 1.0.0', style: TextStyle(color: Colors.white.withOpacity(0.3), fontSize: 12))),
+            const SizedBox(height: 16),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHelpRow(IconData icon, String label) {
+    return Row(
+      children: [
+        Icon(icon, color: Colors.white.withOpacity(0.7), size: 22),
+        const SizedBox(width: 16),
+        Text(label, style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w500)),
+        const Spacer(),
+        Icon(Icons.chevron_right_rounded, color: Colors.white.withOpacity(0.3), size: 20),
       ],
     );
   }
