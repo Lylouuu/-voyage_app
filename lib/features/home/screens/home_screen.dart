@@ -10,6 +10,7 @@ import 'package:voyage_app/features/voyage/screens/create_voyage_screen.dart';
 import 'package:voyage_app/features/voyage/screens/mes_voyages_screen.dart';
 import 'package:voyage_app/features/recommandations/screens/recommandations_screen.dart';
 import 'package:voyage_app/features/favoris/services/favoris_service.dart';
+import 'package:voyage_app/features/favoris/screens/favoris_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -1331,6 +1332,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             activeIcon: Icons.explore,
             label: 'Explorer',
           ),
+          _buildNavItem(
+            index: 2,
+            icon: Icons.favorite_border_rounded,
+            activeIcon: Icons.favorite_rounded,
+            label: 'Favoris',
+          ),
           _buildNavAIButton(),
           _buildNavItem(
             index: 3,
@@ -1360,6 +1367,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       onTap: () {
         if (index == 1) {
           Navigator.push(context, MaterialPageRoute(builder: (_) => const SearchScreen()));
+        } else if (index == 2) {
+          Navigator.push(context, MaterialPageRoute(builder: (_) => const FavorisScreen())).then((_) => _loadData());
         } else if (index == 3) {
           Navigator.push(context, MaterialPageRoute(builder: (_) => const MesVoyagesScreen()));
         } else if (index == 4) {
