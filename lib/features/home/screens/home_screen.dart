@@ -71,9 +71,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   double _heroBgCrossfade = 0.0; // 0 = showing current, 1 = showing next
   late AnimationController _heroBgAnimController;
   late Animation<double> _heroBgZoomAnim;
-  // Scroll tracking for parallax fade
+  // Scroll tracking for parallax fade — Optimized with ValueNotifier
   final ScrollController _scrollController = ScrollController();
-  double _scrollOffset = 0.0;
+  final ValueNotifier<double> _scrollNotifier = ValueNotifier(0.0);
 
   @override
   void initState() {
@@ -104,7 +104,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   }
 
   void _onScroll() {
-    if (mounted) setState(() => _scrollOffset = _scrollController.offset);
+    if (mounted) _scrollNotifier.value = _scrollController.offset;
     if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 400) {
       if (!_isLoadingMore && _hasMore && !_loading) {
         _loadMoreData();
@@ -152,6 +152,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     _heroBgAnimController.removeStatusListener(_heroBgCycleListener);
     _heroBgAnimController.dispose();
     _scrollController.dispose();
+    _scrollNotifier.dispose();
     _destPageController.dispose();
     _fadeController.dispose();
     super.dispose();
@@ -341,56 +342,63 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   // ANIMATED HERO BACKGROUND
   // ─────────────────────────────────────────────
   Widget _buildHeroBackground() {
-    final bgOpacity = (1.0 - (_scrollOffset / 300).clamp(0.0, 1.0));
-    if (bgOpacity <= 0) return const SizedBox.shrink();
+    return ValueListenableBuilder<double>(
+      valueListenable: _scrollNotifier,
+      builder: (context, scrollVal, child) {
+        final bgOpacity = (1.0 - (scrollVal / 300).clamp(0.0, 1.0));
+        if (bgOpacity <= 0) return const SizedBox.shrink();
 
-    return Positioned(
-      top: 0,
-      left: 0,
-      right: 0,
-      height: 280,
-      child: IgnorePointer(
-        child: AnimatedBuilder(
-          animation: _heroBgAnimController,
-          builder: (context, child) {
-            return Opacity(
-              opacity: bgOpacity,
-              child: ClipRRect(
-                borderRadius: const BorderRadius.only(
-                  bottomLeft: Radius.circular(28),
-                  bottomRight: Radius.circular(28),
-                ),
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    // Current image — uniform, same opacity top to bottom
-                    Transform.scale(
-                      scale: _heroBgZoomAnim.value,
-                      child: Image.asset(
-                        _heroBgImages[_heroBgCurrent],
-                        fit: BoxFit.cover,
+        return Positioned(
+          top: 0,
+          left: 0,
+          right: 0,
+          height: 280,
+          child: IgnorePointer(
+            child: AnimatedBuilder(
+              animation: _heroBgAnimController,
+              builder: (context, child) {
+                return Opacity(
+                  opacity: bgOpacity,
+                  child: RepaintBoundary(
+                    child: ClipRRect(
+                      borderRadius: const BorderRadius.only(
+                        bottomLeft: Radius.circular(28),
+                        bottomRight: Radius.circular(28),
+                      ),
+                      child: Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          // Current image
+                          Transform.scale(
+                            scale: _heroBgZoomAnim.value,
+                            child: Image.asset(
+                              _heroBgImages[_heroBgCurrent],
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                          // Next image crossfading in
+                          if (_heroBgCrossfade > 0)
+                            Opacity(
+                              opacity: _heroBgCrossfade,
+                              child: Image.asset(
+                                _heroBgImages[_heroBgNext],
+                                fit: BoxFit.cover,
+                              ),
+                            ),
+                          // Single uniform dark overlay
+                          Container(
+                            color: const Color(0xFF0F1B2D).withValues(alpha: 0.55),
+                          ),
+                        ],
                       ),
                     ),
-                    // Next image crossfading in
-                    if (_heroBgCrossfade > 0)
-                      Opacity(
-                        opacity: _heroBgCrossfade,
-                        child: Image.asset(
-                          _heroBgImages[_heroBgNext],
-                          fit: BoxFit.cover,
-                        ),
-                      ),
-                    // Single uniform dark overlay — same darkness everywhere
-                    Container(
-                      color: const Color(0xFF0F1B2D).withValues(alpha: 0.55),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          },
-        ),
-      ),
+                  ),
+                );
+              },
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -670,17 +678,19 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           // Stacked cards
           SizedBox(
             height: 380,
-            child: Stack(
-              alignment: Alignment.center,
-              clipBehavior: Clip.none,
-              children: [
-                // Back cards (show 2 behind)
-                for (int i = 2; i >= 0; i--)
-                  if (i > 0)
-                    _buildStackedBackCard(top, i),
-                // Front card (swipeable)
-                _buildSwipeableFrontCard(top),
-              ],
+            child: RepaintBoundary(
+              child: Stack(
+                alignment: Alignment.center,
+                clipBehavior: Clip.none,
+                children: [
+                  // Back cards (show 2 behind)
+                  for (int i = 2; i >= 0; i--)
+                    if (i > 0)
+                      _buildStackedBackCard(top, i),
+                  // Front card (swipeable)
+                  _buildSwipeableFrontCard(top),
+                ],
+              ),
             ),
           ),
           // Card counter
@@ -1323,6 +1333,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 imageUrl: ville['image_url'] ?? '',
                 fit: BoxFit.cover,
                 width: double.infinity,
+                memCacheWidth: 500, // Throttling for memory efficiency
                 placeholder: (_, __) => Container(
                   color: AppTheme.darkNavyLight,
                   child: const Center(
@@ -1546,12 +1557,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             icon: Icons.explore_outlined,
             activeIcon: Icons.explore,
             label: 'Explorer',
-          ),
-          _buildNavItem(
-            index: 2,
-            icon: Icons.favorite_border_rounded,
-            activeIcon: Icons.favorite_rounded,
-            label: 'Favoris',
           ),
           _buildNavAIButton(),
           _buildNavItem(

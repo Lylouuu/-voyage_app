@@ -9,6 +9,7 @@ import 'package:voyage_app/features/search/screens/search_screen.dart';
 import 'package:voyage_app/features/voyage/screens/mes_voyages_screen.dart';
 import 'package:voyage_app/features/auth/screens/auth_screen.dart';
 import 'package:voyage_app/features/favoris/screens/favoris_screen.dart';
+import 'package:voyage_app/main.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -112,7 +113,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (mounted) {
       Navigator.pushAndRemoveUntil(
         context,
-        MaterialPageRoute(builder: (_) => const AuthScreen()),
+        MaterialPageRoute(builder: (_) => const AuthWrapper()),
         (route) => false,
       );
     }

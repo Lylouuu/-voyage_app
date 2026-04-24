@@ -882,6 +882,7 @@ class _SearchScreenState extends State<SearchScreen> with SingleTickerProviderSt
                 CachedNetworkImage(
                   imageUrl: ville['image_url'] ?? '',
                   fit: BoxFit.cover,
+                  memCacheWidth: 400, // Optimize memory
                   placeholder: (_, __) => Container(
                     color: AppTheme.darkNavyLight,
                     child: const Center(

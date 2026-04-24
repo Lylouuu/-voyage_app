@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:voyage_app/core/theme/app_theme.dart';
 import 'package:voyage_app/features/home/screens/home_screen.dart';
+import 'package:voyage_app/main.dart';
 
 class OnboardingScreen extends StatefulWidget {
   final bool isEditing;
@@ -133,9 +134,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         if (widget.isEditing) {
           Navigator.pop(context);
         } else {
-          Navigator.pushReplacement(
+          // Restart AuthWrapper to re-evaluate the user profile (budget is now filled)
+          Navigator.pushAndRemoveUntil(
             context,
-            MaterialPageRoute(builder: (_) => const HomeScreen()),
+            MaterialPageRoute(builder: (_) => const AuthWrapper()),
+            (route) => false,
           );
         }
       }
