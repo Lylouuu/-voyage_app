@@ -17,17 +17,19 @@ class AppTheme {
   static ThemeData get theme => ThemeData(
     useMaterial3: true,
     fontFamily: 'Poppins',
-    scaffoldBackgroundColor: background,
-    colorScheme: ColorScheme.fromSeed(
-      seedColor: primary,
+    brightness: Brightness.dark,
+    scaffoldBackgroundColor: darkNavy,
+    colorScheme: const ColorScheme.dark(
       primary: primary,
       secondary: secondary,
-      background: background,
+      surface: darkNavyLight,
+      background: darkNavy,
+      onBackground: Colors.white,
     ),
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
-        backgroundColor: primary,
-        foregroundColor: Colors.white,
+        backgroundColor: limeGreen,
+        foregroundColor: darkNavy,
         minimumSize: const Size(double.infinity, 54),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         elevation: 0,
@@ -35,20 +37,21 @@ class AppTheme {
     ),
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
-      fillColor: Colors.white,
+      fillColor: Colors.white.withOpacity(0.05),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
-        borderSide: BorderSide(color: Colors.grey.shade200),
+        borderSide: BorderSide.none,
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
-        borderSide: BorderSide(color: Colors.grey.shade200),
+        borderSide: BorderSide.none,
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
-        borderSide: const BorderSide(color: primary, width: 1.5),
+        borderSide: const BorderSide(color: limeGreen, width: 1.5),
       ),
       contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+      hintStyle: TextStyle(color: Colors.white.withOpacity(0.3)),
     ),
   );
 }

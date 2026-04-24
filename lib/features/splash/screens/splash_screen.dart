@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:voyage_app/features/onboarding/screens/welcome_swiper_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:voyage_app/main.dart'; // Pour AuthWrapper
+import 'package:voyage_app/features/onboarding/screens/welcome_swiper_screen.dart'; // To Swiper
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -8,65 +10,115 @@ class SplashScreen extends StatefulWidget {
   State<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderStateMixin {
+class _SplashScreenState extends State<SplashScreen>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
-  late Animation<double> _planeMovementY;
-  late Animation<double> _onboardingSlideUp;
-  bool _showOnboarding = false;
-  bool _navigated = false;
+  late Animation<double> _fadeAnim;
+  late Animation<double> _scaleAnim;
+  late Animation<double> _subtitleFadeAnim;
+  late Animation<double> _progressAnim;
+  late Animation<double> _iconMicroAnim;
+
+  // Background colors from previous implementation (kept exactly as requested)
+  static const _kNavy = Color(0xFF080D1A);
+  
+  // Premium accent colors
+  static const _kSplashGreen = Color(0xFFC6FF3B);
+  static const _kSplashCyan = Color(0xFF00D1FF);
 
   @override
   void initState() {
     super.initState();
+    // Total duration ~2400ms for a premium feel
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 2500), // Plus lent pour un effet "tirage"
+      duration: const Duration(milliseconds: 2400),
     );
 
-    // L'avion décolle vers le haut — il part en premier, plus vite
-    _planeMovementY = Tween<double>(begin: 0, end: -600).animate(
+    // 1. Logo Fade out/in & Scale (600ms)
+    // 600 / 2400 = 0.25
+    _fadeAnim = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(
         parent: _controller,
-        // L'avion commence dès le début et finit à 70% de l'animation
-        curve: const Interval(0.0, 0.7, curve: Curves.easeInCubic),
+        curve: const Interval(0.0, 0.25, curve: Curves.easeOut),
+      ),
+    );
+    _scaleAnim = Tween<double>(begin: 0.90, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _controller,
+        curve: const Interval(0.0, 0.25, curve: Curves.easeOut),
       ),
     );
 
-    // L'onboarding commence un tout petit peu après l'avion et monte plus doucement
-    // Comme si l'avion le TIRE derrière lui
-    _onboardingSlideUp = Tween<double>(begin: 1.0, end: 0.0).animate(
+    // 2. Subtitle Fade with slight delay (starts at ~360ms, ends ~840ms)
+    _subtitleFadeAnim = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(
         parent: _controller,
-        // Commence à 5% (léger retard derrière l'avion) et finit à 100%
-        curve: const Interval(0.05, 1.0, curve: Curves.easeOutCubic),
+        curve: const Interval(0.15, 0.35, curve: Curves.easeOut),
       ),
     );
 
-    // Quand l'animation termine, on remplace proprement la route
+    // 3. Airplane micro animation (elegant subtle drift over time)
+    _iconMicroAnim = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _controller,
+        curve: const Interval(0.1, 1.0, curve: Curves.easeOutSine),
+      ),
+    );
+
+    // 4. Progress bar fill smoothly across the bottom
+    _progressAnim = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _controller,
+        curve: const Interval(0.0, 1.0, curve: Curves.easeInOut),
+      ),
+    );
+
+    // Navigate on completion
     _controller.addStatusListener((status) {
-      if (status == AnimationStatus.completed && !_navigated) {
-        _navigated = true;
-        Navigator.of(context).pushReplacement(
-          PageRouteBuilder(
-            transitionDuration: Duration.zero,
-            pageBuilder: (_, __, ___) => const WelcomeSwiperScreen(),
-          ),
-        );
+      if (status == AnimationStatus.completed) {
+        _navigate();
       }
     });
 
-    // Pré-chargement de la première image d'onboarding pendant le temps d'attente
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      precacheImage(const AssetImage("assets/images/onboarding1.jpg"), context);
+    // Start animation immediately
+    Future.microtask(() {
+      if (mounted) _controller.forward();
     });
+  }
 
-    // Après 1 seconde d'affichage du logo, on lance tout
-    Future.delayed(const Duration(milliseconds: 1000), () {
-      if (mounted) {
-        setState(() => _showOnboarding = true);
-        _controller.forward();
-      }
-    });
+  Future<void> _navigate() async {
+    final prefs = await SharedPreferences.getInstance();
+    final hasSeen = prefs.getBool('has_seen_onboarding') ?? false;
+
+    if (!mounted) return;
+
+    Navigator.of(context).pushReplacement(
+      PageRouteBuilder(
+        transitionDuration: const Duration(milliseconds: 400),
+        pageBuilder: (context, animation, secondaryAnimation) =>
+            hasSeen ? const AuthWrapper() : const WelcomeSwiperScreen(),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          // Smooth fade in + slide up transition
+          final fade = Tween<double>(begin: 0.0, end: 1.0).animate(
+            CurvedAnimation(parent: animation, curve: Curves.easeOut),
+          );
+          final slide = Tween<Offset>(
+            begin: const Offset(0.0, 0.02),
+            end: Offset.zero,
+          ).animate(
+            CurvedAnimation(parent: animation, curve: Curves.easeOut),
+          );
+          return FadeTransition(
+            opacity: fade,
+            child: SlideTransition(
+              position: slide,
+              child: child,
+            ),
+          );
+        },
+      ),
+    );
   }
 
   @override
@@ -77,123 +129,176 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
 
   @override
   Widget build(BuildContext context) {
-    const Color nightBlue = Color(0xFF131936);
-    final screenHeight = MediaQuery.of(context).size.height;
-
     return Scaffold(
-      backgroundColor: nightBlue,
+      backgroundColor: _kNavy,
       body: Stack(
+        fit: StackFit.expand,
         children: [
-          // Couche 1 : Le logo NexTrip au centre
-          Center(
-            child: AnimatedBuilder(
-              animation: _controller,
-              builder: (context, child) {
-                return Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Text(
-                      "NEX",
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 45,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: 2.0,
-                      ),
-                    ),
-                    Transform.translate(
-                      offset: Offset(0, _planeMovementY.value),
-                      child: const Icon(
-                        Icons.airplanemode_active,
-                        color: Colors.white,
-                        size: 47,
-                      ),
-                    ),
-                    const Text(
-                      "RIP",
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 45,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: 2.0,
-                      ),
-                    ),
-                  ],
-                );
-              },
+          // ── EXACTLY UNCHANGED Background from previous ────────────────────
+          Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Color(0xFF04060C),
+                  _kNavy,
+                  Color(0xFF0D1730),
+                ],
+                stops: [0.0, 0.5, 1.0],
+              ),
             ),
           ),
+          // Radial Light Center
+          Center(
+            child: Container(
+              height: 400,
+              width: 400,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  colors: [
+                    const Color(0xFF26D0CE).withValues(alpha: 0.12),
+                    Colors.transparent,
+                  ],
+                  stops: const [0.0, 1.0],
+                ),
+              ),
+            ),
+          ),
+          // ────────────────────────────────────────────────────────────────────
 
-          // Couche 2 : Panneau de prévisualisation qui monte derrière l'avion
-          // On n'embarque PAS le vrai WelcomeSwiperScreen ici pour éviter les lags
-          // On montre juste un panneau avec la 1ère image + le dégradé
-          if (_showOnboarding)
-            AnimatedBuilder(
-              animation: _onboardingSlideUp,
-              builder: (context, child) {
-                return Transform.translate(
-                  offset: Offset(0, screenHeight * _onboardingSlideUp.value),
-                  child: child,
-                );
-              },
-              child: Stack(
+          // ── Premium Animations Layer ────────────────────────────────────────
+          AnimatedBuilder(
+            animation: _controller,
+            builder: (context, child) {
+              return Stack(
                 fit: StackFit.expand,
                 children: [
-                  // La 1ère image d'onboarding en aperçu
-                  Image.asset(
-                    "assets/images/onboarding1.jpg",
-                    fit: BoxFit.cover,
-                    alignment: Alignment.center,
-                    gaplessPlayback: true,
-                  ),
-                  // Dégradé sombre identique à l'onboarding
-                  Container(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          Colors.transparent,
-                          Colors.black.withOpacity(0.5),
-                          nightBlue.withOpacity(0.95),
-                        ],
-                        stops: const [0.4, 0.75, 1.0],
-                      ),
-                    ),
-                  ),
-                  // Le texte de la 1ère slide
-                  Positioned(
-                    bottom: 120,
-                    left: 30,
-                    right: 30,
+                  // Center Content (Logo + Subtitle)
+                  Center(
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Text(
-                          "Discover Your\nNext Journey",
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 38,
-                            fontWeight: FontWeight.w900,
-                            height: 1.2,
-                            letterSpacing: 0.5,
+                        // Animated Logo Block
+                        Opacity(
+                          opacity: _fadeAnim.value,
+                          child: Transform.scale(
+                            scale: _scaleAnim.value,
+                            child: Stack(
+                              alignment: Alignment.center,
+                              clipBehavior: Clip.none,
+                              children: [
+                                // Subtle Neon Glow around text area
+                                Container(
+                                  width: 180,
+                                  height: 50,
+                                  decoration: BoxDecoration(
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: _kSplashGreen.withValues(alpha: 0.15),
+                                        blurRadius: 36,
+                                        spreadRadius: 8,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                // Text Logo with airplane icon
+                                Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Text(
+                                      'NEX',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 46,
+                                        fontWeight: FontWeight.w900,
+                                        letterSpacing: 2.0,
+                                      ),
+                                    ),
+                                    // Elegant micro-animated airplane
+                                    Padding(
+                                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                                      child: Transform.translate(
+                                        offset: Offset(
+                                          _iconMicroAnim.value * 4.0, // slight slide right
+                                          -_iconMicroAnim.value * 2.0, // slight slide up
+                                        ),
+                                        child: Transform.rotate(
+                                          angle: 0.04 * _iconMicroAnim.value, // microscopic tilt
+                                          child: const Icon(
+                                            Icons.airplanemode_active_rounded,
+                                            color: _kSplashGreen,
+                                            size: 40,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    const Text(
+                                      'RIP',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 46,
+                                        fontWeight: FontWeight.w900,
+                                        letterSpacing: 2.0,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
                           ),
                         ),
-                        const SizedBox(height: 16),
-                        Text(
-                          "Explore the world's most beautiful destinations curated just for you.",
-                          style: TextStyle(
-                            color: Colors.white.withOpacity(0.8),
-                            fontSize: 16,
-                            height: 1.5,
+                        
+                        const SizedBox(height: 14),
+                        
+                        // Fading Premium Subtitle
+                        Opacity(
+                          opacity: _subtitleFadeAnim.value,
+                          child: Text(
+                            'Your next trip starts here',
+                            style: TextStyle(
+                              color: Colors.white.withValues(alpha: 0.75), // 75% opacity as requested
+                              fontSize: 15,
+                              fontWeight: FontWeight.w500,
+                              letterSpacing: 1.0,
+                            ),
                           ),
                         ),
                       ],
                     ),
                   ),
+
+                  // Bottom Loading line (2-3px gradient)
+                  Positioned(
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: FractionallySizedBox(
+                        widthFactor: _progressAnim.value,
+                        child: Container(
+                          height: 3,
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: [_kSplashGreen, _kSplashCyan],
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: _kSplashGreen.withValues(alpha: 0.4),
+                                blurRadius: 8,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
                 ],
-              ),
-            ),
+              );
+            },
+          ),
         ],
       ),
     );

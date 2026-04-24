@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:voyage_app/main.dart'; // Pour AuthWrapper
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:voyage_app/main.dart'; 
+import 'package:voyage_app/core/theme/app_theme.dart';
 
 class WelcomeSwiperScreen extends StatefulWidget {
   const WelcomeSwiperScreen({super.key});
@@ -12,224 +14,203 @@ class _WelcomeSwiperScreenState extends State<WelcomeSwiperScreen> {
   final PageController _pageController = PageController();
   int _currentPage = 0;
 
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    // Optionnel: on peut forcer le chargement en RAM des images quand l'écran démarre
-    // pour garantir 0 délai lors du Swipe
-    precacheImage(const AssetImage("assets/images/onboarding1.jpg"), context);
-    precacheImage(const AssetImage("assets/images/onboarding2.jpg"), context);
-    precacheImage(const AssetImage("assets/images/onboarding3.jpg"), context);
-  }
-
-  // Données de l'onboarding configurées explicitement pour VOS fichiers locaux
-  final List<Map<String, dynamic>> _pages = [
+  final List<Map<String, String>> _onboardingData = [
     {
-      "title": "Discover Your\nNext Journey",
-      "subtitle": "Explore the world's most beautiful destinations curated just for you.",
-      "media": "assets/images/onboarding1.jpg", 
-      "titleSize": 38.0,
-      "alignment": Alignment.center, // Bateaux centrés
+      'title': 'Explore the World',
+      'subtitle': 'Discover the most beautiful places on Earth and plan your next adventure.',
+      'image': 'assets/images/onboarding1.jpg',
     },
     {
-      "title": "Smart AI\nRecommendations",
-      "subtitle": "Get personalized travel packages based on your unique preferences.",
-      "media": "assets/images/onboarding2.jpg", 
-      "titleSize": 32.0,
-      "alignment": Alignment.center, // Centré ou légèrement vers le bas. Les girafes au centre
+      'title': 'Plan Your Journey',
+      'subtitle': 'Our AI helps you create the perfect itinerary tailored to your preferences.',
+      'image': 'assets/images/onboarding2.jpg',
     },
     {
-      "title": "Plan Your\nTrip Easily",
-      "subtitle": "Plan and manage your entire trip seamlessly in one place.",
-      "media": "assets/images/onboarding3.jpg", 
-      "titleSize": 38.0,
-      // Le sphinx est très à gauche sur l'image paysage, on aligne donc le visuel sur la gauche !
-      "alignment": Alignment.centerLeft, 
+      'title': 'Ready to Start?',
+      'subtitle': 'Join thousands of travelers and start your premium experience today.',
+      'image': 'assets/images/onboarding3.jpg',
     },
   ];
 
-  @override
-  void dispose() {
-    _pageController.dispose();
-    super.dispose();
-  }
-
-  void _onNextTap() {
-    if (_currentPage == _pages.length - 1) {
+  Future<void> _completeOnboarding() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('has_seen_onboarding', true);
+    if (mounted) {
       Navigator.of(context).pushReplacement(
-        PageRouteBuilder(
-          transitionDuration: const Duration(milliseconds: 600),
-          pageBuilder: (_, __, ___) => const AuthWrapper(),
-          transitionsBuilder: (_, animation, __, child) {
-            return FadeTransition(opacity: animation, child: child);
-          },
-        ),
-      );
-    } else {
-      _pageController.nextPage(
-        duration: const Duration(milliseconds: 400),
-        curve: Curves.easeInOut,
+        MaterialPageRoute(builder: (_) => const AuthWrapper()),
       );
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    const Color nightBlue = Color(0xFF131936);
-
     return Scaffold(
-      backgroundColor: nightBlue,
+      backgroundColor: AppTheme.darkNavy,
       body: Stack(
         children: [
-          // Le Swiper (PageView)
+          // Background Images PageView
           PageView.builder(
             controller: _pageController,
-            onPageChanged: (index) {
-              setState(() {
-                _currentPage = index;
-              });
-            },
-            itemCount: _pages.length,
+            onPageChanged: (index) => setState(() => _currentPage = index),
+            itemCount: _onboardingData.length,
             itemBuilder: (context, index) {
-              final page = _pages[index];
-              
-              // Alignement spécifique par image :
-              // - Girafes (index 1) : remonter pour ne pas couper les têtes
-              // - Pyramides (index 2) : image paysage, centrer le sujet
-              Alignment imgAlignment;
-              if (index == 1) {
-                imgAlignment = const Alignment(0, -0.3); // Girafes : montre les têtes
-              } else if (index == 2) {
-                imgAlignment = Alignment.center; // Nouvelle image portrait : centré
-              } else {
-                imgAlignment = Alignment.center;
-              }
-
               return Stack(
                 fit: StackFit.expand,
                 children: [
-                  // Images déjà compressées (1080px) -> chargement rapide et fluide
                   Image.asset(
-                    page["media"]!,
+                    _onboardingData[index]['image']!,
                     fit: BoxFit.cover,
-                    alignment: imgAlignment,
-                    gaplessPlayback: true,
                   ),
-                  
-                  // Couche de dégradé sombre (Overlay)
-                  // Pour la 2ème slide, le dégradé est inversé (sombre en haut) 
+                  // Dark Gradient Overlay
                   Container(
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
-                        begin: index == 1 ? Alignment.bottomCenter : Alignment.topCenter,
-                        end: index == 1 ? Alignment.topCenter : Alignment.bottomCenter,
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
                         colors: [
                           Colors.transparent,
-                          Colors.black.withOpacity(0.5),
-                          nightBlue.withOpacity(0.95),
+                          AppTheme.darkNavy.withValues(alpha: 0.5),
+                          AppTheme.darkNavy,
                         ],
-                        stops: const [0.4, 0.75, 1.0],
+                        stops: const [0.0, 0.5, 0.9],
                       ),
-                    ),
-                  ),
-
-                  // Texte superposé
-                  // Pour la 2ème slide : en haut. Pour les autres : en bas.
-                  Positioned(
-                    top: index == 1 ? 80 : null,
-                    bottom: index == 1 ? null : (index == 0 ? 120 : 150),
-                    left: 30,
-                    right: 30,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          page["title"]!,
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: page["titleSize"], 
-                            fontWeight: FontWeight.w900,
-                            height: 1.2,
-                            letterSpacing: 0.5,
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          page["subtitle"]!,
-                          style: TextStyle(
-                            color: Colors.white.withOpacity(0.8),
-                            fontSize: 16,
-                            height: 1.5,
-                          ),
-                        ),
-                      ],
                     ),
                   ),
                 ],
               );
             },
           ),
-          
-          // Contrôles en bas (Indicateurs de page + Bouton)
-          Positioned(
-            bottom: 40,
-            left: 30,
-            right: 30,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Row(
-                  children: List.generate(
-                    _pages.length,
-                    (index) => AnimatedContainer(
-                      duration: const Duration(milliseconds: 300),
-                      margin: const EdgeInsets.only(right: 8),
-                      height: 8,
-                      width: _currentPage == index ? 28 : 8,
-                      decoration: BoxDecoration(
-                        color: _currentPage == index ? const Color(0xFFC4E538) : Colors.white.withOpacity(0.3),
-                        borderRadius: BorderRadius.circular(4),
+
+          // Content
+          SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.all(32.0),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.end,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Page Indicators
+                  Row(
+                    children: List.generate(
+                      _onboardingData.length,
+                      (index) => AnimatedContainer(
+                        duration: const Duration(milliseconds: 300),
+                        margin: const EdgeInsets.only(right: 8),
+                        height: 8,
+                        width: _currentPage == index ? 24 : 8,
+                        decoration: BoxDecoration(
+                          color: _currentPage == index
+                              ? AppTheme.limeGreen
+                              : Colors.white.withValues(alpha: 0.3),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
                       ),
                     ),
                   ),
-                ),
-                GestureDetector(
-                  onTap: _onNextTap,
-                  child: AnimatedContainer(
+                  const SizedBox(height: 32),
+                  
+                  // Title
+                  AnimatedSwitcher(
                     duration: const Duration(milliseconds: 300),
-                    curve: Curves.fastOutSlowIn,
-                    height: 60,
-                    width: _currentPage == _pages.length - 1 ? 160 : 60,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFC4E538),
-                      borderRadius: BorderRadius.circular(30),
-                      boxShadow: [
-                        BoxShadow(
-                          color: const Color(0xFFC4E538).withOpacity(0.5),
-                          blurRadius: 15,
-                          offset: const Offset(0, 5),
-                        ),
-                      ],
-                    ),
-                    child: Center(
-                      child: _currentPage == _pages.length - 1
-                          ? const Text(
-                              "Commencer",
-                              style: TextStyle(
-                                color: Color(0xFF131936),
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            )
-                          : const Icon(
-                              Icons.arrow_forward_rounded,
-                              color: Color(0xFF131936),
-                              size: 24,
-                            ),
+                    child: Text(
+                      _onboardingData[_currentPage]['title']!,
+                      key: ValueKey(_currentPage),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 40,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: -1,
+                        height: 1.1,
+                      ),
                     ),
                   ),
-                ),
-              ],
+                  const SizedBox(height: 16),
+                  
+                  // Subtitle
+                  AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 300),
+                    child: Text(
+                      _onboardingData[_currentPage]['subtitle']!,
+                      key: ValueKey(_currentPage),
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.7),
+                        fontSize: 16,
+                        height: 1.5,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 48),
+
+                  // Buttons
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      if (_currentPage < _onboardingData.length - 1)
+                        TextButton(
+                          onPressed: _completeOnboarding,
+                          child: Text(
+                            'Skip',
+                            style: TextStyle(
+                              color: Colors.white.withValues(alpha: 0.5),
+                              fontSize: 16,
+                            ),
+                          ),
+                        )
+                      else
+                        const SizedBox.shrink(),
+                      
+                      GestureDetector(
+                        onTap: () {
+                          if (_currentPage < _onboardingData.length - 1) {
+                            _pageController.nextPage(
+                              duration: const Duration(milliseconds: 500),
+                              curve: Curves.easeInOut,
+                            );
+                          } else {
+                            _completeOnboarding();
+                          }
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                          decoration: BoxDecoration(
+                            color: AppTheme.limeGreen,
+                            borderRadius: BorderRadius.circular(16),
+                            boxShadow: [
+                              BoxShadow(
+                                color: AppTheme.limeGreen.withValues(alpha: 0.3),
+                                blurRadius: 20,
+                                offset: const Offset(0, 10),
+                              ),
+                            ],
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                _currentPage == _onboardingData.length - 1
+                                    ? 'Get Started'
+                                    : 'Next',
+                                style: const TextStyle(
+                                  color: AppTheme.darkNavy,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              const Icon(
+                                Icons.arrow_forward_rounded,
+                                color: AppTheme.darkNavy,
+                                size: 20,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                ],
+              ),
             ),
           ),
         ],

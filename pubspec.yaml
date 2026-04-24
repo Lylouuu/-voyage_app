@@ -20,6 +20,8 @@ dependencies:
   fl_chart: ^1.2.0
   video_player: ^2.11.1
   shared_preferences: ^2.5.5
+  flutter_map: ^8.3.0
+  latlong2: ^0.9.1
 
 dev_dependencies:
   flutter_test:
@@ -31,3 +33,4 @@ flutter:
   assets:
     - .env
     - assets/images/
+    - assets/videos/

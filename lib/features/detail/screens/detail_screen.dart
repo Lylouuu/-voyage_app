@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:voyage_app/core/theme/app_theme.dart';
 import 'package:voyage_app/features/favoris/services/favoris_service.dart';
+import 'package:voyage_app/features/voyage/screens/create_voyage_screen.dart';
 
 class DetailScreen extends StatefulWidget {
   final Map<String, dynamic> ville;
@@ -187,7 +188,16 @@ class _DetailScreenState extends State<DetailScreen> with SingleTickerProviderSt
                     ),
                     child: _InteractiveButton(
                       label: 'Ajouter à mon voyage',
-                      onTap: () {},
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => CreateVoyageScreen(
+                              initialVilleId: widget.ville['id'].toString(),
+                            ),
+                          ),
+                        );
+                      },
                     ),
                   ),
                 ),
@@ -265,11 +275,29 @@ class _DetailScreenState extends State<DetailScreen> with SingleTickerProviderSt
           fit: StackFit.expand,
           children: [
             // Image with Parallax scaling handled natively by FlexibleSpaceBar
-            CachedNetworkImage(
-              imageUrl: ville['image_url'] ?? '',
-              fit: BoxFit.cover,
-              placeholder: (_, __) => Container(color: const Color(0xFF162544)),
-              errorWidget: (_, __, ___) => Container(color: const Color(0xFF162544)),
+            Hero(
+              tag: 'ville_${ville['id']}',
+              child: CachedNetworkImage(
+                imageUrl: ville['image_url'] ?? '',
+                fit: BoxFit.cover,
+                memCacheWidth: 800,
+                placeholder: (context, url) => Container(
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [AppTheme.darkNavyLight, AppTheme.darkNavy],
+                    ),
+                  ),
+                  child: const Center(
+                    child: CircularProgressIndicator(color: AppTheme.limeGreen, strokeWidth: 2),
+                  ),
+                ),
+                errorWidget: (context, url, error) => Container(
+                  color: AppTheme.darkNavy,
+                  child: const Icon(Icons.error_outline, color: Colors.white24, size: 40),
+                ),
+              ),
             ),
             
             // Ultra Premium Gradient Fade
