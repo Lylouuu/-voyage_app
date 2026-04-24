@@ -10,6 +10,8 @@ import 'package:voyage_app/features/voyage/screens/create_voyage_screen.dart';
 import 'package:voyage_app/features/voyage/screens/mes_voyages_screen.dart';
 import 'package:voyage_app/features/recommandations/screens/recommandations_screen.dart';
 import 'package:voyage_app/features/favoris/services/favoris_service.dart';
+import 'package:voyage_app/features/favoris/screens/favoris_screen.dart';
+import 'package:voyage_app/features/map/screens/map_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -23,6 +25,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   String _nom = '';
   List<Map<String, dynamic>> _villes = [];
   bool _loading = true;
+  bool _isLoadingMore = false;
+  bool _hasMore = true;
+  int _offset = 0;
+  final int _limit = 10;
   int _currentIndex = 0;
 
   // Carousel controllers
@@ -53,6 +59,22 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   late AnimationController _fadeController;
   late Animation<double> _fadeAnimation;
 
+  // ── Hero Background Slider ─────────────────────────────────
+  static const _heroBgImages = [
+    'assets/images/img1.jpg',
+    'assets/images/img2.jpg',
+    'assets/images/img3.jpg',
+    'assets/images/img4.jpg',
+  ];
+  int _heroBgCurrent = 0;
+  int _heroBgNext = 1;
+  double _heroBgCrossfade = 0.0; // 0 = showing current, 1 = showing next
+  late AnimationController _heroBgAnimController;
+  late Animation<double> _heroBgZoomAnim;
+  // Scroll tracking for parallax fade
+  final ScrollController _scrollController = ScrollController();
+  double _scrollOffset = 0.0;
+
   @override
   void initState() {
     super.initState();
@@ -62,39 +84,142 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       duration: const Duration(milliseconds: 800),
     );
     _fadeAnimation = CurvedAnimation(parent: _fadeController, curve: Curves.easeOut);
+
+    // Hero background slider: 5s cycles with 1s crossfade
+    _heroBgAnimController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 5000),
+    );
+    _heroBgZoomAnim = Tween<double>(begin: 1.0, end: 1.08).animate(
+      CurvedAnimation(parent: _heroBgAnimController, curve: Curves.easeInOut),
+    );
+    _heroBgAnimController.addStatusListener(_heroBgCycleListener);
+    _heroBgAnimController.forward();
+
+    // Scroll listener for parallax and pagination
+    _scrollController.addListener(_onScroll);
+
     _loadData();
+    _loadFavoris();
+  }
+
+  void _onScroll() {
+    if (mounted) setState(() => _scrollOffset = _scrollController.offset);
+    if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 400) {
+      if (!_isLoadingMore && _hasMore && !_loading) {
+        _loadMoreData();
+      }
+    }
+  }
+
+  void _heroBgCycleListener(AnimationStatus status) {
+    if (status == AnimationStatus.completed && mounted) {
+      // Start crossfade to next image
+      _startHeroCrossfade();
+    }
+  }
+
+  void _startHeroCrossfade() {
+    final nextIdx = (_heroBgCurrent + 1) % _heroBgImages.length;
+    setState(() => _heroBgNext = nextIdx);
+    // Animate crossfade over 1 second
+    const crossfadeDuration = Duration(milliseconds: 1000);
+    const steps = 30;
+    final stepDuration = Duration(milliseconds: crossfadeDuration.inMilliseconds ~/ steps);
+    int step = 0;
+    Future.doWhile(() async {
+      await Future.delayed(stepDuration);
+      step++;
+      if (!mounted) return false;
+      setState(() => _heroBgCrossfade = (step / steps).clamp(0.0, 1.0));
+      if (step >= steps) {
+        // Swap: next becomes current
+        setState(() {
+          _heroBgCurrent = nextIdx;
+          _heroBgCrossfade = 0.0;
+        });
+        // Restart zoom cycle
+        _heroBgAnimController.reset();
+        _heroBgAnimController.forward();
+        return false;
+      }
+      return true;
+    });
   }
 
   @override
   void dispose() {
+    _heroBgAnimController.removeStatusListener(_heroBgCycleListener);
+    _heroBgAnimController.dispose();
+    _scrollController.dispose();
     _destPageController.dispose();
     _fadeController.dispose();
     super.dispose();
   }
 
   Future<void> _loadData() async {
-    final user = _supabase.auth.currentUser;
-    if (user != null) {
-      final userData = await _supabase
-          .from('utilisateurs')
-          .select('nom')
-          .eq('id', user.id)
-          .single();
-      final villes = await _supabase
+    if (mounted) setState(() => _loading = true);
+    _offset = 0;
+    _hasMore = true;
+    
+    try {
+      final user = _supabase.auth.currentUser;
+      if (user != null) {
+        final userData = await _supabase
+            .from('utilisateurs')
+            .select('nom')
+            .eq('id', user.id)
+            .single();
+        setState(() => _nom = userData['nom'] ?? '');
+      }
+
+      final res = await _supabase
           .from('villes')
-          .select('*, pays(nom, continent, langue, monnaie, climat)')
-          .order('popularite', ascending: false);
-      final favIds = await FavorisService.getFavorisIds();
+          .select('*, pays(*)')
+          .order('popularite', ascending: false)
+          .range(0, _limit - 1);
+
       if (mounted) {
         setState(() {
-          _nom = userData['nom'] ?? '';
-          _villes = List<Map<String, dynamic>>.from(villes);
-          _favorisIds = favIds;
+          _villes = List<Map<String, dynamic>>.from(res);
           _loading = false;
+          _offset = _limit;
+          if (res.length < _limit) _hasMore = false;
         });
         _fadeController.forward();
       }
+    } catch (e) {
+      if (mounted) setState(() => _loading = false);
     }
+  }
+
+  Future<void> _loadMoreData() async {
+    if (_isLoadingMore || !_hasMore) return;
+    setState(() => _isLoadingMore = true);
+
+    try {
+      final res = await _supabase
+          .from('villes')
+          .select('*, pays(*)')
+          .order('popularite', ascending: false)
+          .range(_offset, _offset + _limit - 1);
+
+      if (mounted) {
+        setState(() {
+          _villes.addAll(List<Map<String, dynamic>>.from(res));
+          _offset += _limit;
+          _isLoadingMore = false;
+          if (res.length < _limit) _hasMore = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) setState(() => _isLoadingMore = false);
+    }
+  }
+
+  Future<void> _loadFavoris() async {
+    final favIds = await FavorisService.getFavorisIds();
+    if (mounted) setState(() => _favorisIds = favIds);
   }
 
   Future<void> _signOut() async {
@@ -170,6 +295,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         ),
                       ),
                     ),
+                    // ── Animated Hero Background ─────────────────────────
+                    _buildHeroBackground(),
                     // Content
                     FadeTransition(
                       opacity: _fadeAnimation,
@@ -178,13 +305,21 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         backgroundColor: AppTheme.darkNavyLight,
                         onRefresh: _loadData,
                         child: CustomScrollView(
+                          controller: _scrollController,
                           physics: const BouncingScrollPhysics(),
                           slivers: [
                             _buildHeader(),
-                            _buildSearchBar(),
+                            const SliverToBoxAdapter(child: SizedBox(height: 32)),
                             _buildRecommandations(),
                             _buildCreateVoyageCTA(),
                             _buildDestinationsSection(),
+                            if (_isLoadingMore)
+                               const SliverToBoxAdapter(
+                                 child: Padding(
+                                   padding: EdgeInsets.symmetric(vertical: 20),
+                                   child: Center(child: CircularProgressIndicator(color: AppTheme.limeGreen, strokeWidth: 2)),
+                                 ),
+                               ),
                             const SliverToBoxAdapter(child: SizedBox(height: 100)),
                           ],
                         ),
@@ -203,12 +338,69 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   }
 
   // ─────────────────────────────────────────────
+  // ANIMATED HERO BACKGROUND
+  // ─────────────────────────────────────────────
+  Widget _buildHeroBackground() {
+    final bgOpacity = (1.0 - (_scrollOffset / 300).clamp(0.0, 1.0));
+    if (bgOpacity <= 0) return const SizedBox.shrink();
+
+    return Positioned(
+      top: 0,
+      left: 0,
+      right: 0,
+      height: 280,
+      child: IgnorePointer(
+        child: AnimatedBuilder(
+          animation: _heroBgAnimController,
+          builder: (context, child) {
+            return Opacity(
+              opacity: bgOpacity,
+              child: ClipRRect(
+                borderRadius: const BorderRadius.only(
+                  bottomLeft: Radius.circular(28),
+                  bottomRight: Radius.circular(28),
+                ),
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    // Current image — uniform, same opacity top to bottom
+                    Transform.scale(
+                      scale: _heroBgZoomAnim.value,
+                      child: Image.asset(
+                        _heroBgImages[_heroBgCurrent],
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                    // Next image crossfading in
+                    if (_heroBgCrossfade > 0)
+                      Opacity(
+                        opacity: _heroBgCrossfade,
+                        child: Image.asset(
+                          _heroBgImages[_heroBgNext],
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                    // Single uniform dark overlay — same darkness everywhere
+                    Container(
+                      color: const Color(0xFF0F1B2D).withValues(alpha: 0.55),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  // ─────────────────────────────────────────────
   // HEADER
   // ─────────────────────────────────────────────
   Widget _buildHeader() {
     return SliverToBoxAdapter(
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(24, 60, 24, 8),
+        padding: const EdgeInsets.fromLTRB(24, 100, 24, 40),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -247,29 +439,37 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 // Notification + logout
                 Row(
                   children: [
-                    _buildGlassIconButton(
-                      icon: Icons.notifications_none_rounded,
-                      onTap: () {},
-                    ),
+                    _buildGlassMapButton(),
                     const SizedBox(width: 10),
                     _buildGlassIconButton(
-                      icon: Icons.logout_rounded,
-                      onTap: _signOut,
+                      icon: Icons.favorite_rounded,
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const FavorisScreen()),
+                        ).then((_) {
+                          _loadData();
+                        });
+                      },
                     ),
                   ],
                 ),
               ],
             ),
-            const SizedBox(height: 28),
+            const SizedBox(height: 20),
             // Title
             RichText(
               text: TextSpan(
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 32,
                   fontWeight: FontWeight.bold,
                   color: Colors.white,
                   height: 1.2,
                   fontFamily: 'Poppins',
+                  shadows: [
+                    Shadow(color: Colors.black.withOpacity(0.8), blurRadius: 20, offset: Offset(0, 4)),
+                    Shadow(color: Colors.black.withOpacity(0.5), blurRadius: 10, offset: Offset(0, 2)),
+                  ],
                 ),
                 children: [
                   const TextSpan(text: 'Discover Your Next\n'),
@@ -281,6 +481,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       decoration: BoxDecoration(
                         color: AppTheme.limeGreen,
                         borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppTheme.limeGreen.withValues(alpha: 0.20),
+                            blurRadius: 12,
+                            spreadRadius: 1,
+                          ),
+                        ],
                       ),
                       child: const Text(
                         'with AI',
@@ -298,7 +505,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     style: TextStyle(
                       fontSize: 28,
                       fontWeight: FontWeight.w300,
-                      color: Colors.white.withOpacity(0.8),
+                      color: Colors.white.withValues(alpha: 0.75),
                     ),
                   ),
                 ],
@@ -332,61 +539,55 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
-  // ─────────────────────────────────────────────
-  // SEARCH BAR (Glassmorphism)
-  // ─────────────────────────────────────────────
-  Widget _buildSearchBar() {
-    return SliverToBoxAdapter(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(24, 20, 24, 8),
-        child: GestureDetector(
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const SearchScreen()),
-            );
-          },
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(18),
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.07),
-                  borderRadius: BorderRadius.circular(18),
-                  border: Border.all(color: Colors.white.withOpacity(0.12)),
+  // BOUTON MAP PREMIUM (A la place de l'ancienne notification)
+  Widget _buildGlassMapButton() {
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          PageRouteBuilder(
+            pageBuilder: (context, animation, secondaryAnimation) => const MapScreen(),
+            transitionsBuilder: (context, animation, secondaryAnimation, child) {
+              final curve = CurvedAnimation(parent: animation, curve: Curves.easeInOut);
+              return FadeTransition(
+                opacity: curve,
+                child: ScaleTransition(
+                  scale: Tween<double>(begin: 0.96, end: 1.0).animate(curve),
+                  child: child,
                 ),
-                child: Row(
-                  children: [
-                    Icon(Icons.search_rounded, color: Colors.white.withOpacity(0.5), size: 22),
-                    const SizedBox(width: 12),
-                    Text(
-                      'Rechercher une destination...',
-                      style: TextStyle(
-                        color: Colors.white.withOpacity(0.4),
-                        fontSize: 14,
-                        fontWeight: FontWeight.w400,
-                      ),
-                    ),
-                    const Spacer(),
-                    Container(
-                      padding: const EdgeInsets.all(6),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.08),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Icon(Icons.tune_rounded, color: Colors.white.withOpacity(0.4), size: 16),
-                    ),
-                  ],
+              );
+            },
+            transitionDuration: const Duration(milliseconds: 300),
+          ),
+        );
+      },
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(14),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: Container(
+            width: 42,
+            height: 42,
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.06), // Très léger
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: Colors.white.withOpacity(0.08)),
+              boxShadow: [
+                BoxShadow(
+                  color: AppTheme.limeGreen.withOpacity(0.15), // Subtle glow vert
+                  blurRadius: 10,
+                  spreadRadius: 1,
                 ),
-              ),
+              ],
             ),
+            child: Icon(Icons.map_outlined, color: Colors.white.withOpacity(0.9), size: 20),
           ),
         ),
       ),
     );
   }
+
+
 
   // ─────────────────────────────────────────────
   // TINDER-STYLE STACKED CARDS
@@ -403,6 +604,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     if (_cardOffset.dx.abs() > screenWidth * 0.3) {
       // Swipe away
       final direction = _cardOffset.dx > 0 ? 1.0 : -1.0;
+      final ville = cards[_currentCardIndex % cards.length];
+      if (direction > 0) {
+        final id = ville['id'].toString();
+        if (!_favorisIds.contains(id)) {
+          _toggleFavoris(ville);
+        }
+      }
       setState(() => _isSwiping = true);
       Future.delayed(const Duration(milliseconds: 200), () {
         if (mounted) {
@@ -591,10 +799,18 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             CachedNetworkImage(
               imageUrl: ville['image_url'] ?? '',
               fit: BoxFit.cover,
+              memCacheWidth: 600, // Optimize image memory usage
               placeholder: (_, __) => Container(
-                color: AppTheme.darkNavyLight,
+                decoration: BoxDecoration(
+                  color: AppTheme.darkNavyLight,
+                  gradient: LinearGradient(
+                    colors: [AppTheme.darkNavyLight, AppTheme.darkNavy.withOpacity(0.5)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                ),
                 child: const Center(
-                  child: CircularProgressIndicator(color: AppTheme.limeGreen, strokeWidth: 2),
+                  child: CircularProgressIndicator(color: AppTheme.limeGreen, strokeWidth: 1.5),
                 ),
               ),
               errorWidget: (_, __, ___) => Container(
@@ -1374,29 +1590,32 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 300),
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: isActive ? AppTheme.limeGreen : Colors.transparent,
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: Icon(
-                isActive ? activeIcon : icon,
-                color: isActive ? const Color(0xFF0F1B2D) : Colors.white.withOpacity(0.4),
-                size: 22,
-              ),
+            Icon(
+              isActive ? activeIcon : icon,
+              color: isActive ? AppTheme.limeGreen : Colors.white.withValues(alpha: 0.35),
+              size: 24,
             ),
             const SizedBox(height: 4),
             Text(
               label,
               style: TextStyle(
-                color: isActive ? AppTheme.limeGreen : Colors.white.withOpacity(0.35),
+                color: isActive ? AppTheme.limeGreen : Colors.white.withValues(alpha: 0.30),
                 fontSize: 10,
                 fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
               ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 3),
+            // Active dot indicator
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 300),
+              width: isActive ? 4 : 0,
+              height: isActive ? 4 : 0,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: isActive ? AppTheme.limeGreen : Colors.transparent,
+              ),
             ),
           ],
         ),
@@ -1412,35 +1631,48 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           MaterialPageRoute(builder: (_) => const RecommandationsScreen()),
         );
       },
-      child: Container(
-        width: 56,
-        height: 56,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          gradient: const LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Color(0xFF7C3AED),
-              Color(0xFF9F5AFF),
-              Color(0xFFB47AFF),
-            ],
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: const Color(0xFF7C3AED).withOpacity(0.4),
-              blurRadius: 16,
-              offset: const Offset(0, 4),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Color(0xFF7C3AED),
+                  Color(0xFF9F5AFF),
+                ],
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF7C3AED).withValues(alpha: 0.25),
+                  blurRadius: 10,
+                  offset: const Offset(0, 3),
+                ),
+              ],
             ),
-          ],
-        ),
-        child: const Center(
-          child: Icon(
-            Icons.auto_awesome,
-            color: Colors.white,
-            size: 26,
+            child: const Center(
+              child: Icon(
+                Icons.auto_awesome,
+                color: Colors.white,
+                size: 22,
+              ),
+            ),
           ),
-        ),
+          const SizedBox(height: 4),
+          Text(
+            'AI Planner',
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.50),
+              fontSize: 10,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
       ),
     );
   }

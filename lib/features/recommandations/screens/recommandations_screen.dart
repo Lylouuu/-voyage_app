@@ -7,6 +7,7 @@ import 'package:voyage_app/features/detail/screens/detail_screen.dart';
 import 'package:voyage_app/features/profile/screens/profile_screen.dart';
 import 'package:voyage_app/features/search/screens/search_screen.dart';
 import 'package:voyage_app/features/voyage/screens/mes_voyages_screen.dart';
+import 'package:voyage_app/features/favoris/services/favoris_service.dart';
 
 class RecommandationsScreen extends StatefulWidget {
   const RecommandationsScreen({super.key});
@@ -559,6 +560,35 @@ class _PremiumDestCard extends StatefulWidget {
 
 class _PremiumDestCardState extends State<_PremiumDestCard> {
   bool _isHovered = false;
+  bool _isFav = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkFav();
+  }
+
+  Future<void> _checkFav() async {
+    final id = widget.ville['id'].toString();
+    final isFav = await FavorisService.estFavoris(id);
+    if (mounted) setState(() => _isFav = isFav);
+  }
+
+  Future<void> _toggleFav() async {
+    final id = widget.ville['id'].toString();
+    final nom = widget.ville['nom'] ?? '';
+    
+    setState(() => _isFav = !_isFav);
+    try {
+      if (_isFav) {
+        await FavorisService.ajouterFavoris(id, nom);
+      } else {
+        await FavorisService.supprimerFavoris(id);
+      }
+    } catch (_) {
+      setState(() => _isFav = !_isFav);
+    }
+  }
 
   void _navigateToDetail() {
     Navigator.push(
@@ -702,21 +732,26 @@ class _PremiumDestCardState extends State<_PremiumDestCard> {
                   ),
                 ),
 
-                // 4. Floating Favorite Icon (optional visual balance)
+                // 4. Floating Favorite Icon
                 Positioned(
                   top: 70,
                   right: 16,
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(20),
-                    child: BackdropFilter(
-                      filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
-                      child: Container(
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: Colors.black.withOpacity(0.3),
-                          shape: BoxShape.circle,
+                  child: GestureDetector(
+                    onTap: _toggleFav,
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(20),
+                      child: BackdropFilter(
+                        filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 300),
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: _isFav ? AppTheme.coral.withOpacity(0.35) : Colors.black.withOpacity(0.3),
+                            shape: BoxShape.circle,
+                            border: Border.all(color: _isFav ? AppTheme.coral.withOpacity(0.6) : Colors.transparent),
+                          ),
+                          child: Icon(_isFav ? Icons.favorite_rounded : Icons.favorite_border_rounded, color: _isFav ? AppTheme.coral : Colors.white, size: 20),
                         ),
-                        child: const Icon(Icons.favorite_border_rounded, color: Colors.white, size: 20),
                       ),
                     ),
                   ),

@@ -3,11 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:voyage_app/core/theme/app_theme.dart';
-import 'package:voyage_app/features/admin/screens/admin_login_screen.dart';
 import 'package:voyage_app/features/onboarding/screens/onboarding_screen.dart';
 import 'package:voyage_app/features/recommandations/screens/recommandations_screen.dart';
 import 'package:voyage_app/features/search/screens/search_screen.dart';
 import 'package:voyage_app/features/voyage/screens/mes_voyages_screen.dart';
+import 'package:voyage_app/features/auth/screens/auth_screen.dart';
+import 'package:voyage_app/features/favoris/screens/favoris_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -21,11 +22,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Map<String, dynamic>? _user;
   Map<String, dynamic>? _prefs;
   bool _loading = true;
+  int _countVoyages = 0;
+  int _countFavoris = 0;
+  int _countAvis = 0;
 
   // Settings state
-  bool _notifPush = true;
-  bool _notifEmail = true;
-  bool _notifPrice = false;
   String _selectedLang = 'Français';
 
   @override
@@ -39,9 +40,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final prefs = await SharedPreferences.getInstance();
     if (mounted) {
       setState(() {
-        _notifPush = prefs.getBool('notifPush') ?? true;
-        _notifEmail = prefs.getBool('notifEmail') ?? true;
-        _notifPrice = prefs.getBool('notifPrice') ?? false;
         _selectedLang = prefs.getString('selectedLang') ?? 'Français';
       });
     }
@@ -84,6 +82,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
       debugPrint('[Profile] ERREUR preferences: $e');
     }
 
+    try {
+      final resVoyages = await _supabase.from('plans_voyage').select('id').eq('id_user', user.id);
+      final resFavoris = await _supabase.from('favoris').select('id_user').eq('id_user', user.id);
+      final resAvis = await _supabase.from('avis').select('id').eq('id_user', user.id);
+
+      if (mounted) {
+        setState(() {
+          _countVoyages = resVoyages.length;
+          _countFavoris = resFavoris.length;
+          _countAvis = resAvis.length;
+        });
+      }
+    } catch (e) {
+      debugPrint('[Profile] ERREUR stats: $e');
+    }
+
     if (mounted) {
       setState(() {
         _user = userData;
@@ -95,6 +109,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Future<void> _signOut() async {
     await _supabase.auth.signOut();
+    if (mounted) {
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (_) => const AuthScreen()),
+        (route) => false,
+      );
+    }
   }
 
   String _getUserInitial() {
@@ -239,9 +260,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              _buildCleanStat('0', 'Voyages'),
-              _buildCleanStat('0', 'Favoris'),
-              _buildCleanStat('0', 'Avis'),
+              _buildCleanStat('$_countVoyages', 'Voyages'),
+              _buildCleanStat('$_countFavoris', 'Favoris'),
+              _buildCleanStat('$_countAvis', 'Avis'),
             ],
           ),
         ],
@@ -410,102 +431,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
         ),
         const SizedBox(height: 16),
-        _InteractiveSettingCard(icon: Icons.notifications_none_rounded, label: 'Notifications', onTap: _showNotificationsFilters),
+        _InteractiveSettingCard(
+          icon: Icons.favorite_rounded,
+          label: 'Mes Favoris',
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const FavorisScreen()),
+            ).then((_) => _loadData());
+          },
+        ),
         const SizedBox(height: 10),
         _InteractiveSettingCard(icon: Icons.language_rounded, label: 'Langue & Région', onTap: _showLanguageFilters),
         const SizedBox(height: 10),
         _InteractiveSettingCard(icon: Icons.help_outline_rounded, label: 'Aide & Support', onTap: _showHelpBottomSheet),
-        const SizedBox(height: 10),
-        _InteractiveSettingCard(
-          icon: Icons.admin_panel_settings_outlined,
-          label: 'Administration',
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const AdminLoginScreen()),
-            );
-          },
-        ),
-      ],
-    );
-  }
-
-  // ─────────────────────────────────────────────
-  // BOTTOM SHEETS
-  // ─────────────────────────────────────────────
-
-  void _showNotificationsFilters() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setModalState) {
-          return Container(
-            padding: const EdgeInsets.all(24),
-            decoration: const BoxDecoration(
-              color: Color(0xFF162544),
-              borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Center(
-                  child: Container(
-                    width: 40,
-                    height: 4,
-                    decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), borderRadius: BorderRadius.circular(10)),
-                  ),
-                ),
-                const SizedBox(height: 24),
-                const Text('Notifications', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white)),
-                const SizedBox(height: 24),
-                _buildToggleRow('Notifications Push', 'Alertes sur votre téléphone', _notifPush, (v) {
-                  setModalState(() => _notifPush = v);
-                  setState(() => _notifPush = v);
-                  _saveSetting('notifPush', v);
-                }),
-                const SizedBox(height: 16),
-                _buildToggleRow('Emails de voyage', 'Récapitulatifs et conseils', _notifEmail, (v) {
-                  setModalState(() => _notifEmail = v);
-                  setState(() => _notifEmail = v);
-                  _saveSetting('notifEmail', v);
-                }),
-                const SizedBox(height: 16),
-                _buildToggleRow('Alertes de prix', 'Promotions sur vos favoris', _notifPrice, (v) {
-                  setModalState(() => _notifPrice = v);
-                  setState(() => _notifPrice = v);
-                  _saveSetting('notifPrice', v);
-                }),
-                const SizedBox(height: 32),
-              ],
-            ),
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _buildToggleRow(String title, String subtitle, bool value, ValueChanged<bool> onChanged) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(title, style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600)),
-            const SizedBox(height: 4),
-            Text(subtitle, style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 13)),
-          ],
-        ),
-        Switch(
-          value: value,
-          onChanged: onChanged,
-          activeColor: AppTheme.limeGreen,
-          activeTrackColor: AppTheme.limeGreen.withOpacity(0.3),
-          inactiveThumbColor: Colors.white.withOpacity(0.5),
-          inactiveTrackColor: Colors.white.withOpacity(0.1),
-        ),
       ],
     );
   }
@@ -769,11 +708,9 @@ class _InteractiveSettingCardState extends State<_InteractiveSettingCard> {
 
     return GestureDetector(
       onTapDown: (_) => setState(() => _isPressed = true),
-      onTapUp: (_) {
-        setState(() => _isPressed = false);
-        widget.onTap();
-      },
+      onTapUp: (_) => setState(() => _isPressed = false),
       onTapCancel: () => setState(() => _isPressed = false),
+      onTap: widget.onTap,
       child: AnimatedScale(
         scale: _isPressed ? 0.98 : 1.0,
         duration: const Duration(milliseconds: 100),

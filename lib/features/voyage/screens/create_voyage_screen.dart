@@ -3,7 +3,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:voyage_app/core/theme/app_theme.dart';
 
 class CreateVoyageScreen extends StatefulWidget {
-  const CreateVoyageScreen({super.key});
+  final String? initialVilleId;
+  const CreateVoyageScreen({super.key, this.initialVilleId});
 
   @override
   State<CreateVoyageScreen> createState() => _CreateVoyageScreenState();
@@ -38,6 +39,10 @@ class _CreateVoyageScreenState extends State<CreateVoyageScreen> {
   @override
   void initState() {
     super.initState();
+    if (widget.initialVilleId != null) {
+      _selectedVilleId = widget.initialVilleId;
+      _loadActivites(widget.initialVilleId!);
+    }
     _loadVilles();
   }
 

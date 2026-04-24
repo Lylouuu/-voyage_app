@@ -7,6 +7,7 @@ import 'package:voyage_app/features/home/screens/home_screen.dart';
 import 'package:voyage_app/features/admin/screens/admin_panel.dart';
 import 'package:voyage_app/features/admin/services/admin_service.dart';
 import 'package:voyage_app/features/splash/screens/splash_screen.dart';
+import 'package:voyage_app/features/onboarding/screens/onboarding_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -49,7 +50,8 @@ class AuthWrapper extends StatelessWidget {
               builder: (context, userSnapshot) {
                 if (userSnapshot.connectionState == ConnectionState.waiting) {
                   return const Scaffold(
-                    body: Center(child: CircularProgressIndicator(color: AppTheme.primary)),
+                    backgroundColor: AppTheme.darkNavy,
+                    body: Center(child: CircularProgressIndicator(color: AppTheme.limeGreen, strokeWidth: 2)),
                   );
                 }
                 
@@ -60,7 +62,14 @@ class AuthWrapper extends StatelessWidget {
                   return AdminPanel(adminData: userData ?? {});
                 }
                 
-                // Normal user goes to the home screen
+                // If it's a regular user, check if they have filled their preferences.
+                // We check 'budget' as an indicator that preferences were saved.
+                final budget = userData?['budget'];
+                if (budget == null || budget.toString().trim().isEmpty) {
+                  return const OnboardingScreen();
+                }
+
+                // Normal user with preferences goes to the home screen
                 return const HomeScreen();
               },
             );
