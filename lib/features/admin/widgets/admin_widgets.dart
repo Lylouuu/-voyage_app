@@ -1,16 +1,20 @@
 import 'package:flutter/material.dart';
+import 'dart:math' as math;
 import 'package:voyage_app/features/admin/theme/admin_theme.dart';
 
 // ════════════════════════════════════════════════════════════════
-//  STAT CARD — Dashboard KPI cards
+//  STAT CARD — Dashboard KPI cards (Enhanced with sparkline)
 // ════════════════════════════════════════════════════════════════
 
-class AdminStatCard extends StatelessWidget {
+class AdminStatCard extends StatefulWidget {
   final String title;
   final String value;
   final IconData icon;
   final Color color;
   final Color bgColor;
+  final String? variation; // e.g. "+12%"
+  final bool isPositive;
+  final int animationDelay; // ms delay for staggered animation
 
   const AdminStatCard({
     super.key,
@@ -19,49 +23,396 @@ class AdminStatCard extends StatelessWidget {
     required this.icon,
     required this.color,
     required this.bgColor,
+    this.variation,
+    this.isPositive = true,
+    this.animationDelay = 0,
+  });
+
+  @override
+  State<AdminStatCard> createState() => _AdminStatCardState();
+}
+
+class _AdminStatCardState extends State<AdminStatCard>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _fadeAnimation;
+  late Animation<Offset> _slideAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 600),
+      vsync: this,
+    );
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeOut),
+    );
+    _slideAnimation =
+        Tween<Offset>(begin: const Offset(0, 0.15), end: Offset.zero).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic),
+    );
+    Future.delayed(Duration(milliseconds: widget.animationDelay), () {
+      if (mounted) _controller.forward();
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FadeTransition(
+      opacity: _fadeAnimation,
+      child: SlideTransition(
+        position: _slideAnimation,
+        child: Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                AdminTheme.surface,
+                widget.color.withOpacity(0.05),
+              ],
+            ),
+            borderRadius: AdminTheme.radiusLg,
+            border: Border.all(color: AdminTheme.surfaceBorder),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: widget.bgColor,
+                      borderRadius: AdminTheme.radiusMd,
+                    ),
+                    child: Icon(widget.icon, color: widget.color, size: 22),
+                  ),
+                  // Mini sparkline
+                  SizedBox(
+                    width: 50,
+                    height: 24,
+                    child: CustomPaint(
+                      painter: _SparklinePainter(
+                        color: widget.isPositive
+                            ? AdminTheme.success
+                            : AdminTheme.danger,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Text(
+                widget.value,
+                style: TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.w700,
+                  color: widget.color,
+                  letterSpacing: -0.5,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(widget.title, style: AdminTheme.bodyMd),
+                  ),
+                  if (widget.variation != null)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: (widget.isPositive
+                                ? AdminTheme.success
+                                : AdminTheme.danger)
+                            .withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            widget.isPositive
+                                ? Icons.trending_up_rounded
+                                : Icons.trending_down_rounded,
+                            color: widget.isPositive
+                                ? AdminTheme.success
+                                : AdminTheme.danger,
+                            size: 12,
+                          ),
+                          const SizedBox(width: 3),
+                          Text(
+                            widget.variation!,
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: widget.isPositive
+                                  ? AdminTheme.success
+                                  : AdminTheme.danger,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Tiny sparkline painter for KPI cards
+class _SparklinePainter extends CustomPainter {
+  final Color color;
+  _SparklinePainter({required this.color});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final rng = math.Random(42);
+    final points = List.generate(8, (i) {
+      final x = (i / 7) * size.width;
+      final y = size.height * (0.2 + rng.nextDouble() * 0.6);
+      return Offset(x, y);
+    });
+    // Sort to make a rising trend feel
+    points.sort((a, b) => (b.dy).compareTo(a.dy));
+    final sortedPoints = <Offset>[];
+    for (int i = 0; i < points.length; i++) {
+      sortedPoints.add(Offset(
+        (i / (points.length - 1)) * size.width,
+        points[i].dy,
+      ));
+    }
+
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = 1.5
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round;
+
+    final path = Path();
+    path.moveTo(sortedPoints.first.dx, sortedPoints.first.dy);
+    for (int i = 1; i < sortedPoints.length; i++) {
+      final prev = sortedPoints[i - 1];
+      final curr = sortedPoints[i];
+      final cpX = (prev.dx + curr.dx) / 2;
+      path.cubicTo(cpX, prev.dy, cpX, curr.dy, curr.dx, curr.dy);
+    }
+    canvas.drawPath(path, paint);
+
+    // Gradient fill below
+    final fillPath = Path.from(path);
+    fillPath.lineTo(size.width, size.height);
+    fillPath.lineTo(0, size.height);
+    fillPath.close();
+
+    final fillPaint = Paint()
+      ..shader = LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [color.withOpacity(0.2), color.withOpacity(0.0)],
+      ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
+    canvas.drawPath(fillPath, fillPaint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+// ════════════════════════════════════════════════════════════════
+//  PLATFORM STAT BADGE — Compact horizontal stat chips
+// ════════════════════════════════════════════════════════════════
+
+class PlatformStatBadge extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String value;
+  final Color color;
+
+  const PlatformStatBadge({
+    super.key,
+    required this.icon,
+    required this.label,
+    required this.value,
+    required this.color,
   });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
         color: AdminTheme.surface,
-        borderRadius: AdminTheme.radiusLg,
+        borderRadius: AdminTheme.radiusMd,
         border: Border.all(color: AdminTheme.surfaceBorder),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(icon, color: color, size: 16),
+          ),
+          const SizedBox(width: 10),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: bgColor,
-                  borderRadius: AdminTheme.radiusMd,
+              Text(
+                value,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: color,
                 ),
-                child: Icon(icon, color: color, size: 22),
               ),
-              Icon(Icons.trending_up_rounded, color: AdminTheme.success, size: 18),
+              Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 11,
+                  color: AdminTheme.textMuted,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
             ],
           ),
-          const SizedBox(height: 16),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 28,
-              fontWeight: FontWeight.w700,
-              color: color,
-              letterSpacing: -0.5,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(title, style: AdminTheme.bodyMd),
         ],
       ),
     );
+  }
+}
+
+// ════════════════════════════════════════════════════════════════
+//  RANKED LIST ITEM — Top items with medal ranks
+// ════════════════════════════════════════════════════════════════
+
+class RankedListItem extends StatelessWidget {
+  final int rank;
+  final String name;
+  final String countLabel;
+  final double progress;
+  final Color color;
+  final Color bgColor;
+
+  const RankedListItem({
+    super.key,
+    required this.rank,
+    required this.name,
+    required this.countLabel,
+    required this.progress,
+    required this.color,
+    required this.bgColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 14),
+      child: Row(
+        children: [
+          // Rank badge
+          Container(
+            width: 28,
+            height: 28,
+            decoration: BoxDecoration(
+              gradient: rank <= 3
+                  ? LinearGradient(
+                      colors: _getMedalColors(),
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    )
+                  : null,
+              color: rank > 3 ? AdminTheme.surfaceLight : null,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Center(
+              child: Text(
+                '#$rank',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  color: rank <= 3 ? Colors.white : AdminTheme.textMuted,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          // Name + bar
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w600,
+                          color: AdminTheme.textPrimary,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ),
+                    Text(
+                      countLabel,
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        color: color,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(10),
+                  child: LinearProgressIndicator(
+                    value: progress,
+                    backgroundColor: bgColor,
+                    color: color,
+                    minHeight: 5,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  List<Color> _getMedalColors() {
+    switch (rank) {
+      case 1:
+        return [const Color(0xFFFFD700), const Color(0xFFFFA000)]; // Gold
+      case 2:
+        return [const Color(0xFFC0C0C0), const Color(0xFF9E9E9E)]; // Silver
+      case 3:
+        return [const Color(0xFFCD7F32), const Color(0xFFA0522D)]; // Bronze
+      default:
+        return [AdminTheme.surfaceLight, AdminTheme.surfaceLight];
+    }
   }
 }
 
