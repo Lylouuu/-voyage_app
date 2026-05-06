@@ -3,11 +3,12 @@ name: CI Voyage App
 on:
   push:
     branches: [ develop, main ]
+  pull_request:
+    branches: [ develop, main ]
 
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v4
 
@@ -23,3 +24,37 @@ jobs:
       - run: flutter pub get
 
       - run: flutter analyze --no-fatal-infos --no-fatal-warnings
+
+  sast_scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run Semgrep (SAST)
+        run: |
+          pip install semgrep
+          semgrep --config=auto
+
+  sca_scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run Snyk (SCA)
+        run: |
+          npm install -g snyk
+          snyk test --severity-threshold=medium
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+
+  dast_scan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run OWASP ZAP baseline (DAST)
+        run: |
+          docker run -t owasp/zap2docker-stable zap-baseline.py \
+            -t http://localhost:8080 \
+            -r zap_report.html
+      - name: Upload DAST report
+        uses: actions/upload-artifact@v4
+        with:
+          name: zap-report
+          path: zap_report.html
