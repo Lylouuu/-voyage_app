@@ -319,7 +319,10 @@ class AdminService {
         counts[date] = (counts[date] ?? 0) + 1;
       }
 
-      return counts.entries.map((e) => {'date': e.key, 'count': e.value}).toList();
+      final result = counts.entries.map((e) => {'date': e.key, 'count': e.value}).toList();
+      // Trier explicitement par date pour garantir l'ordre chronologique
+      result.sort((a, b) => (a['date'] as String).compareTo(b['date'] as String));
+      return result;
     } catch (e) {
       debugPrint('Erreur getVoyagesParJour: $e');
       return [];
