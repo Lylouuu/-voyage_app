@@ -5,6 +5,7 @@ on:
     branches: [ develop, main ]
   pull_request:
     branches: [ develop, main ]
+  workflow_dispatch:   # permet de lancer manuellement depuis GitHub Actions
 
 jobs:
   build:
@@ -38,12 +39,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Run Snyk (SCA)
+      - name: Install Trivy
         run: |
-          npm install -g snyk
-          snyk test --severity-threshold=medium
-        env:
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh
+      - name: Run Trivy (SCA)
+        run: ./trivy fs --severity HIGH,CRITICAL .
 
   dast_scan:
     runs-on: ubuntu-latest
