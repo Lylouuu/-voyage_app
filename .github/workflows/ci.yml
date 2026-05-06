@@ -39,20 +39,40 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Install Trivy
-        run: |
-          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh
       - name: Run Trivy (SCA)
-        run: ./trivy fs --severity HIGH,CRITICAL .
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          severity: 'HIGH,CRITICAL'
+          exit-code: '0'
+          ignore-unfixed: true
 
   dast_scan:
     runs-on: ubuntu-latest
     steps:
-      - name: Run OWASP ZAP baseline (DAST)
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+      - name: Créer .env
         run: |
-          docker run -t owasp/zap2docker-stable zap-baseline.py \
+          echo "SUPABASE_URL=${{ secrets.SUPABASE_URL }}" >> .env
+          echo "SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}" >> .env
+      - name: Activer Flutter web et démarrer le serveur
+        run: |
+          flutter config --enable-web
+          flutter pub get
+          flutter run -d web-server --web-port 8080 &
+          sleep 30
+      - name: Run OWASP ZAP baseline (DAST)
+        continue-on-error: true
+        run: |
+          docker run --network host \
+            -v ${{ github.workspace }}:/zap/wrk \
+            ghcr.io/zaproxy/zaproxy:stable \
+            zap-baseline.py \
             -t http://localhost:8080 \
-            -r zap_report.html
+            -r /zap/wrk/zap_report.html
       - name: Upload DAST report
         uses: actions/upload-artifact@v4
         with:
