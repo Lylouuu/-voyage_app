@@ -186,7 +186,7 @@ class _CreateVoyageScreenState extends State<CreateVoyageScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.darkNavy,
+      backgroundColor: const Color(0xFFF4F9FF),
       body: Stack(
         children: [
           // Background Gradient
@@ -195,7 +195,7 @@ class _CreateVoyageScreenState extends State<CreateVoyageScreen> {
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
-                colors: [Color(0xFF0F1B2D), Color(0xFF0A1628)],
+                colors: [Color(0xFFF4F9FF), Color(0xFFEBF5FB)],
               ),
             ),
           ),
@@ -294,8 +294,8 @@ class _CreateVoyageScreenState extends State<CreateVoyageScreen> {
                   begin: Alignment.bottomCenter,
                   end: Alignment.topCenter,
                   colors: [
-                    AppTheme.darkNavy,
-                    AppTheme.darkNavy.withOpacity(0.9),
+                    const Color(0xFFF4F9FF),
+                    const Color(0xFFF4F9FF).withOpacity(0.9),
                     Colors.transparent,
                   ],
                   stops: const [0.3, 0.7, 1.0],
@@ -328,11 +328,13 @@ class _CreateVoyageScreenState extends State<CreateVoyageScreen> {
               child: Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.05),
+                  color: Colors.white,
                   borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: Colors.white.withOpacity(0.1)),
+                  boxShadow: [
+                    BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4)),
+                  ],
                 ),
-                child: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 18),
+                child: const Icon(Icons.arrow_back_ios_new_rounded, color: Color(0xFF4A6580), size: 18),
               ),
             ),
             const SizedBox(height: 28),
@@ -341,16 +343,16 @@ class _CreateVoyageScreenState extends State<CreateVoyageScreen> {
               style: TextStyle(
                 fontSize: 34,
                 fontWeight: FontWeight.bold,
-                color: Colors.white,
+                color: Color(0xFF0A192F),
                 letterSpacing: -1,
               ),
             ),
             const SizedBox(height: 6),
-            Text(
+            const Text(
               'Planifiez votre prochaine aventure',
               style: TextStyle(
                 fontSize: 16,
-                color: Colors.white.withOpacity(0.6),
+                color: Color(0xFF4A6580),
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -368,14 +370,14 @@ class _CreateVoyageScreenState extends State<CreateVoyageScreen> {
       width: double.infinity,
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: const Color(0xFF162544),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.white.withOpacity(0.03)),
+        border: Border.all(color: const Color(0xFF4DB6E8).withOpacity(0.1)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withOpacity(0.04),
             blurRadius: 15,
-            offset: const Offset(0, 8),
+            offset: const Offset(0, 5),
           ),
         ],
       ),
@@ -387,7 +389,7 @@ class _CreateVoyageScreenState extends State<CreateVoyageScreen> {
             style: const TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.bold,
-              color: Colors.white,
+              color: Color(0xFF0A192F),
               letterSpacing: -0.3,
             ),
           ),
@@ -415,9 +417,9 @@ class _CreateVoyageScreenState extends State<CreateVoyageScreen> {
               margin: const EdgeInsets.symmetric(horizontal: 4),
               padding: const EdgeInsets.symmetric(vertical: 14),
               decoration: BoxDecoration(
-                color: sel ? AppTheme.limeGreen.withOpacity(0.15) : Colors.white.withOpacity(0.03),
+                color: sel ? const Color(0xFF4DB6E8).withOpacity(0.15) : const Color(0xFFF4F9FF),
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: sel ? AppTheme.limeGreen : Colors.transparent),
+                border: Border.all(color: sel ? const Color(0xFF4DB6E8) : const Color(0xFF4A6580).withOpacity(0.1)),
               ),
               child: Column(
                 children: [
@@ -428,7 +430,7 @@ class _CreateVoyageScreenState extends State<CreateVoyageScreen> {
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: sel ? FontWeight.bold : FontWeight.w600,
-                      color: sel ? AppTheme.limeGreen : Colors.white.withOpacity(0.5),
+                      color: sel ? const Color(0xFF4DB6E8) : const Color(0xFF4A6580),
                     ),
                   ),
                 ],
@@ -443,16 +445,16 @@ class _CreateVoyageScreenState extends State<CreateVoyageScreen> {
   Widget _buildDestinationDropdown() {
     return DropdownButtonFormField<String>(
       value: _selectedVilleId,
-      dropdownColor: const Color(0xFF162544),
-      icon: const Icon(Icons.keyboard_arrow_down_rounded, color: AppTheme.limeGreen),
-      style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w500),
+      dropdownColor: Colors.white,
+      icon: const Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFF4DB6E8)),
+      style: const TextStyle(color: Color(0xFF0A192F), fontSize: 16, fontWeight: FontWeight.w500),
       // Muted background to match text fields
       decoration: InputDecoration(
         hintText: 'Choisir une ville',
-        hintStyle: TextStyle(color: Colors.white.withOpacity(0.3)),
-        prefixIcon: const Icon(Icons.location_on_outlined, color: AppTheme.limeGreen),
+        hintStyle: const TextStyle(color: Color(0xFF4A6580)),
+        prefixIcon: const Icon(Icons.location_on_outlined, color: Color(0xFF4DB6E8)),
         filled: true,
-        fillColor: Colors.white.withOpacity(0.05),
+        fillColor: const Color(0xFFF4F9FF),
         contentPadding: const EdgeInsets.all(16),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
@@ -494,17 +496,17 @@ class _CreateVoyageScreenState extends State<CreateVoyageScreen> {
             margin: const EdgeInsets.only(bottom: 10),
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: sel ? AppTheme.limeGreen.withOpacity(0.1) : Colors.white.withOpacity(0.03),
+              color: sel ? const Color(0xFF4DB6E8).withOpacity(0.1) : const Color(0xFFF4F9FF),
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: sel ? AppTheme.limeGreen.withOpacity(0.5) : Colors.transparent,
+                color: sel ? const Color(0xFF4DB6E8).withOpacity(0.5) : const Color(0xFF4A6580).withOpacity(0.1),
               ),
             ),
             child: Row(
               children: [
                 Icon(
                   sel ? Icons.check_circle_rounded : Icons.circle_outlined,
-                  color: sel ? AppTheme.limeGreen : Colors.white.withOpacity(0.3),
+                  color: sel ? const Color(0xFF4DB6E8) : const Color(0xFF4A6580).withOpacity(0.3),
                   size: 22,
                 ),
                 const SizedBox(width: 14),
@@ -517,13 +519,13 @@ class _CreateVoyageScreenState extends State<CreateVoyageScreen> {
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: sel ? FontWeight.bold : FontWeight.w600,
-                          color: sel ? Colors.white : Colors.white.withOpacity(0.8),
+                          color: sel ? const Color(0xFF0A192F) : const Color(0xFF4A6580),
                         ),
                       ),
                       const SizedBox(height: 3),
                       Text(
                         '${a['duree'] ?? ''} · ${a['prix'] == 0 ? 'Gratuit' : '${a['prix']}€'}',
-                        style: TextStyle(fontSize: 12, color: Colors.white.withOpacity(0.5)),
+                        style: const TextStyle(fontSize: 12, color: Color(0xFF4A6580)),
                       ),
                     ],
                   ),
@@ -567,20 +569,20 @@ class _CreateVoyageScreenState extends State<CreateVoyageScreen> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
-              color: AppTheme.limeGreen.withOpacity(0.1),
+              color: const Color(0xFF4DB6E8).withOpacity(0.1),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(Icons.flight_takeoff_rounded, color: AppTheme.limeGreen, size: 18),
+                const Icon(Icons.flight_takeoff_rounded, color: Color(0xFF4DB6E8), size: 18),
                 const SizedBox(width: 10),
                 Text(
                   '${_nombreJours()} jours de voyage',
                   style: const TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
-                    color: AppTheme.limeGreen,
+                    color: Color(0xFF4DB6E8),
                   ),
                 ),
               ],
@@ -596,17 +598,18 @@ class _CreateVoyageScreenState extends State<CreateVoyageScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
+        color: const Color(0xFFF4F9FF),
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFF4A6580).withOpacity(0.1)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             label,
-            style: TextStyle(
+            style: const TextStyle(
               fontSize: 11,
-              color: Colors.white.withOpacity(0.5),
+              color: Color(0xFF4A6580),
               fontWeight: FontWeight.bold,
               letterSpacing: 1,
             ),
@@ -617,7 +620,7 @@ class _CreateVoyageScreenState extends State<CreateVoyageScreen> {
             style: TextStyle(
               fontSize: 16,
               fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-              color: isSelected ? Colors.white : Colors.white.withOpacity(0.4),
+              color: isSelected ? const Color(0xFF0A192F) : const Color(0xFF4A6580).withOpacity(0.5),
             ),
           ),
         ],
@@ -662,31 +665,31 @@ class _PremiumTextFieldState extends State<_PremiumTextField> {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 250),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.05),
+          color: const Color(0xFFF4F9FF),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: _isFocused ? AppTheme.limeGreen : Colors.transparent,
+            color: _isFocused ? const Color(0xFF4DB6E8) : const Color(0xFF4A6580).withOpacity(0.1),
             width: 1.5,
           ),
           boxShadow: _isFocused
-              ? [BoxShadow(color: AppTheme.limeGreen.withOpacity(0.15), blurRadius: 10)]
+              ? [BoxShadow(color: const Color(0xFF4DB6E8).withOpacity(0.15), blurRadius: 10)]
               : [],
         ),
         child: TextFormField(
           controller: widget.controller,
           maxLines: widget.maxLines,
           keyboardType: widget.keyboardType,
-          style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w500),
+          style: const TextStyle(color: Color(0xFF0A192F), fontSize: 16, fontWeight: FontWeight.w500),
           decoration: InputDecoration(
             filled: false, // Prevents global theme from painting it white
             hintText: widget.hintText,
-            hintStyle: TextStyle(color: Colors.white.withOpacity(0.3), fontWeight: FontWeight.normal),
+            hintStyle: TextStyle(color: const Color(0xFF4A6580).withOpacity(0.5), fontWeight: FontWeight.normal),
             prefixIcon: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 14),
-              child: Icon(widget.icon, color: _isFocused ? AppTheme.limeGreen : Colors.white.withOpacity(0.5)),
+              child: Icon(widget.icon, color: _isFocused ? const Color(0xFF4DB6E8) : const Color(0xFF4A6580).withOpacity(0.5)),
             ),
             suffixText: widget.suffixText,
-            suffixStyle: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+            suffixStyle: const TextStyle(color: Color(0xFF0A192F), fontSize: 16, fontWeight: FontWeight.bold),
             contentPadding: const EdgeInsets.all(16),
             border: InputBorder.none,
           ),
@@ -731,14 +734,14 @@ class _InteractiveButtonState extends State<_InteractiveButton> {
           height: 60,
           decoration: BoxDecoration(
             gradient: const LinearGradient(
-              colors: [AppTheme.limeGreen, Color(0xFF00C9B1)],
+              colors: [Color(0xFF4DB6E8), Color(0xFF1A7EC8)],
               begin: Alignment.centerLeft,
               end: Alignment.centerRight,
             ),
             borderRadius: BorderRadius.circular(20),
             boxShadow: [
               BoxShadow(
-                color: AppTheme.limeGreen.withOpacity(0.3),
+                color: const Color(0xFF4DB6E8).withOpacity(0.3),
                 blurRadius: 20,
                 offset: const Offset(0, 8),
               ),
@@ -749,12 +752,12 @@ class _InteractiveButtonState extends State<_InteractiveButton> {
                 ? const SizedBox(
                     height: 24,
                     width: 24,
-                    child: CircularProgressIndicator(color: Color(0xFF0F1B2D), strokeWidth: 3),
+                    child: CircularProgressIndicator(color: Colors.white, strokeWidth: 3),
                   )
                 : Text(
                     widget.label,
                     style: const TextStyle(
-                      color: Color(0xFF0F1B2D),
+                      color: Colors.white,
                       fontSize: 18,
                       fontWeight: FontWeight.w800,
                     ),

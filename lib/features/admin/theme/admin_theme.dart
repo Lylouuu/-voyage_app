@@ -3,15 +3,15 @@ import 'package:flutter/material.dart';
 /// Thème premium clair (Light Mode) avec design fluide pour le panneau d'administration
 class AdminTheme {
   // ── Couleurs principales ────────────────────────────────────
-  static const Color background = Color(0xFF0A1628); // Dark Navy
-  static const Color surface = Color(0xFF162544); // Dark Navy Light
-  static const Color surfaceLight = Color(0xFF1E325A); // Slightly lighter
-  static const Color surfaceBorder = Color(0x20FFFFFF); // Subtle white border
+  static const Color background = Color(0xFFF4F9FF); // Bleu ciel très clair
+  static const Color surface = Color(0xFFFFFFFF); // Blanc pur
+  static const Color surfaceLight = Color(0xFFF8FAFC); // Gris/Bleu très très clair
+  static const Color surfaceBorder = Color(0x1A4A6580); // Bordure subtile foncée
 
-  // Accents (Lime Green moderne)
-  static const Color accent = Color(0xFFCBF266); // Lime Green
-  static const Color accentLight = Color(0xFFDDF587);
-  static const Color accentSoft = Color(0x1ACBF266);
+  // Accents (Bleu Ciel moderne)
+  static const Color accent = Color(0xFF4DB6E8); // Bleu ciel
+  static const Color accentLight = Color(0xFF7EC8E3);
+  static const Color accentSoft = Color(0x1A4DB6E8);
 
   // Sémantiques
   static const Color success = Color(0xFF00C9A7);
@@ -24,15 +24,15 @@ class AdminTheme {
   static const Color infoSoft = Color(0x1A4ECDC4);
 
   // Texte
-  static const Color textPrimary = Color(0xFFFFFFFF); // Blanc
-  static const Color textSecondary = Color(0xB3FFFFFF); // Blanc 70%
-  static const Color textMuted = Color(0x80FFFFFF); // Blanc 50%
+  static const Color textPrimary = Color(0xFF0A192F); // Bleu marine très foncé
+  static const Color textSecondary = Color(0xFF4A6580); // Gris bleuté
+  static const Color textMuted = Color(0x994A6580); // Gris bleuté 60%
 
   // Gradient principal
   static const LinearGradient primaryGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [Color(0xFFCBF266), Color(0xFFA5D13B)],
+    colors: [Color(0xFF4DB6E8), Color(0xFF1A7EC8)],
   );
 
   static const LinearGradient dangerGradient = LinearGradient(
@@ -50,7 +50,7 @@ class AdminTheme {
   // ── Ombres (Très douces pour l'effet light) ─────────────────
   static List<BoxShadow> shadowSm = [
     BoxShadow(
-      color: const Color(0xFF000000).withOpacity(0.15),
+      color: const Color(0xFF000000).withOpacity(0.04),
       blurRadius: 10,
       offset: const Offset(0, 4),
     ),
@@ -58,7 +58,7 @@ class AdminTheme {
 
   static List<BoxShadow> shadowMd = [
     BoxShadow(
-      color: const Color(0xFF000000).withOpacity(0.25),
+      color: const Color(0xFF000000).withOpacity(0.08),
       blurRadius: 18,
       offset: const Offset(0, 8),
     ),
@@ -66,7 +66,7 @@ class AdminTheme {
 
   static List<BoxShadow> shadowLg = [
     BoxShadow(
-      color: const Color(0xFFCBF266).withOpacity(0.12),
+      color: const Color(0xFF4DB6E8).withOpacity(0.15),
       blurRadius: 24,
       offset: const Offset(0, 10),
     ),
@@ -162,7 +162,7 @@ class AdminTheme {
   // ── Button styles (Boutons modernes et arrondis) ────────────
   static ButtonStyle primaryButton = ElevatedButton.styleFrom(
     backgroundColor: accent,
-    foregroundColor: const Color(0xFF0F1B2D), // Dark text on lime green button
+    foregroundColor: Colors.white, // White text on blue button
     padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 16),
     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(100)), // Fluid button
     elevation: 4,

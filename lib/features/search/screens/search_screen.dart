@@ -104,21 +104,21 @@ class _SearchScreenState extends State<SearchScreen> with SingleTickerProviderSt
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.darkNavy,
+      backgroundColor: const Color(0xFFF4F9FF),
       resizeToAvoidBottomInset: false, // Prevents bottom overflow with keyboard
       bottomNavigationBar: _buildBottomNav(),
       body: Stack(
         children: [
-          // Background gradient
+          // Background clair
           Container(
             decoration: const BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
                 colors: [
-                  Color(0xFF0F1B2D),
-                  Color(0xFF0A1628),
-                  Color(0xFF0D1F3C),
+                  Color(0xFFF4F9FF),
+                  Color(0xFFEBF5FB),
+                  Color(0xFFF0F8FF),
                 ],
               ),
             ),
@@ -420,10 +420,17 @@ class _SearchScreenState extends State<SearchScreen> with SingleTickerProviderSt
     return Container(
       padding: EdgeInsets.only(bottom: MediaQuery.of(context).padding.bottom + 8, top: 12),
       decoration: BoxDecoration(
-        color: const Color(0xFF0A1628), // Same as bottom of background gradient
+        color: Colors.white,
         border: Border(
-          top: BorderSide(color: Colors.white.withOpacity(0.05)),
+          top: BorderSide(color: const Color(0xFF4DB6E8).withOpacity(0.10)),
         ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 20,
+            offset: const Offset(0, -4),
+          ),
+        ],
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -484,29 +491,31 @@ class _SearchScreenState extends State<SearchScreen> with SingleTickerProviderSt
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 300),
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: isActive ? AppTheme.limeGreen : Colors.transparent,
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: Icon(
-                isActive ? activeIcon : icon,
-                color: isActive ? const Color(0xFF0F1B2D) : Colors.white.withOpacity(0.4),
-                size: 22,
-              ),
+            Icon(
+              isActive ? activeIcon : icon,
+              color: isActive ? const Color(0xFF4DB6E8) : const Color(0xFF4A6580).withOpacity(0.45),
+              size: 24,
             ),
             const SizedBox(height: 4),
             Text(
               label,
               style: TextStyle(
-                color: isActive ? AppTheme.limeGreen : Colors.white.withOpacity(0.35),
+                color: isActive ? const Color(0xFF4DB6E8) : const Color(0xFF4A6580).withOpacity(0.45),
                 fontSize: 10,
-                fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
+                fontWeight: isActive ? FontWeight.w700 : FontWeight.w400,
               ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 3),
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 300),
+              width: isActive ? 4 : 0,
+              height: isActive ? 4 : 0,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: isActive ? const Color(0xFF4DB6E8) : Colors.transparent,
+              ),
             ),
           ],
         ),
@@ -527,18 +536,10 @@ class _SearchScreenState extends State<SearchScreen> with SingleTickerProviderSt
         height: 56,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          gradient: const LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Color(0xFF7C3AED),
-              Color(0xFF9F5AFF),
-              Color(0xFFB47AFF),
-            ],
-          ),
+          gradient: const LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [Color(0xFF4DB6E8), Color(0xFF1A7EC8)]),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFF7C3AED).withOpacity(0.4),
+              color: const Color(0xFF4DB6E8).withOpacity(0.4),
               blurRadius: 16,
               offset: const Offset(0, 4),
             ),
@@ -567,12 +568,12 @@ class _SearchScreenState extends State<SearchScreen> with SingleTickerProviderSt
           // Budget filter
           Padding(
             padding: const EdgeInsets.only(left: 24, bottom: 10),
-            child: Text(
+            child: const Text(
               '💰 Budget',
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
-                color: Colors.white.withOpacity(0.4),
+                color: Color(0xFF4A6580),
                 letterSpacing: 0.5,
               ),
             ),
@@ -597,18 +598,18 @@ class _SearchScreenState extends State<SearchScreen> with SingleTickerProviderSt
                       padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
                       decoration: BoxDecoration(
                         color: selected
-                            ? AppTheme.limeGreen
-                            : Colors.white.withOpacity(0.06),
+                            ? const Color(0xFF4DB6E8)
+                            : Colors.white,
                         borderRadius: BorderRadius.circular(50),
                         border: Border.all(
                           color: selected
-                              ? AppTheme.limeGreen
-                              : Colors.white.withOpacity(0.1),
+                              ? const Color(0xFF4DB6E8)
+                              : const Color(0xFF4DB6E8).withOpacity(0.2),
                         ),
                         boxShadow: selected
                             ? [
                                 BoxShadow(
-                                  color: AppTheme.limeGreen.withOpacity(0.25),
+                                  color: const Color(0xFF4DB6E8).withOpacity(0.25),
                                   blurRadius: 12,
                                   offset: const Offset(0, 3),
                                 ),
@@ -621,8 +622,8 @@ class _SearchScreenState extends State<SearchScreen> with SingleTickerProviderSt
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
                           color: selected
-                              ? const Color(0xFF0F1B2D)
-                              : Colors.white.withOpacity(0.6),
+                              ? Colors.white
+                              : const Color(0xFF4A6580),
                         ),
                       ),
                     ),
@@ -635,12 +636,12 @@ class _SearchScreenState extends State<SearchScreen> with SingleTickerProviderSt
           // Continent filter
           Padding(
             padding: const EdgeInsets.only(left: 24, bottom: 10),
-            child: Text(
+            child: const Text(
               '🌍 Continent',
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
-                color: Colors.white.withOpacity(0.4),
+                color: Color(0xFF4A6580),
                 letterSpacing: 0.5,
               ),
             ),
@@ -665,18 +666,18 @@ class _SearchScreenState extends State<SearchScreen> with SingleTickerProviderSt
                       padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
                       decoration: BoxDecoration(
                         color: selected
-                            ? AppTheme.limeGreen
-                            : Colors.white.withOpacity(0.06),
+                            ? const Color(0xFF4DB6E8)
+                            : Colors.white,
                         borderRadius: BorderRadius.circular(50),
                         border: Border.all(
                           color: selected
-                              ? AppTheme.limeGreen
-                              : Colors.white.withOpacity(0.1),
+                              ? const Color(0xFF4DB6E8)
+                              : const Color(0xFF4DB6E8).withOpacity(0.2),
                         ),
                         boxShadow: selected
                             ? [
                                 BoxShadow(
-                                  color: AppTheme.limeGreen.withOpacity(0.25),
+                                  color: const Color(0xFF4DB6E8).withOpacity(0.25),
                                   blurRadius: 12,
                                   offset: const Offset(0, 3),
                                 ),
@@ -689,8 +690,8 @@ class _SearchScreenState extends State<SearchScreen> with SingleTickerProviderSt
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
                           color: selected
-                              ? const Color(0xFF0F1B2D)
-                              : Colors.white.withOpacity(0.6),
+                              ? Colors.white
+                              : const Color(0xFF4A6580),
                         ),
                       ),
                     ),
@@ -715,16 +716,16 @@ class _SearchScreenState extends State<SearchScreen> with SingleTickerProviderSt
         children: [
           RichText(
             text: TextSpan(
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 13,
-                color: Colors.white.withOpacity(0.4),
+                color: Color(0xFF4A6580),
                 fontFamily: 'Poppins',
               ),
               children: [
                 TextSpan(
                   text: '${_results.length}',
-                  style: TextStyle(
-                    color: AppTheme.limeGreen,
+                  style: const TextStyle(
+                    color: Color(0xFF4DB6E8),
                     fontWeight: FontWeight.w700,
                     fontSize: 15,
                   ),
@@ -739,13 +740,19 @@ class _SearchScreenState extends State<SearchScreen> with SingleTickerProviderSt
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.06),
+              color: Colors.white,
               borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: Colors.white.withOpacity(0.08)),
+              border: Border.all(color: const Color(0xFFEBF5FB)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.02),
+                  blurRadius: 4,
+                ),
+              ],
             ),
-            child: Icon(
+            child: const Icon(
               Icons.sort_rounded,
-              color: Colors.white.withOpacity(0.4),
+              color: Color(0xFF4A6580),
               size: 18,
             ),
           ),

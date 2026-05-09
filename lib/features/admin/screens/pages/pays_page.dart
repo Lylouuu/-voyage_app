@@ -145,44 +145,240 @@ class _PaysPageState extends State<PaysPage> {
     }
   }
 
+  String _getFlagOrImage(Map<String, dynamic> p) {
+    if (p['image_url'] != null && (p['image_url'] as String).isNotEmpty) {
+      return p['image_url'];
+    }
+    
+    final nom = (p['nom'] ?? '').toLowerCase().trim();
+    
+    // Traductions anglaises pour loremflickr
+    final traductions = {
+      'espagne': 'spain',
+      'france': 'france',
+      'algérie': 'algeria',
+      'japon': 'japan',
+      'thaïlande': 'thailand',
+      'indonésie': 'indonesia',
+      'maroc': 'morocco',
+      'turquie': 'turkey',
+      'maldives': 'maldives',
+      'italie': 'italy',
+    };
+    
+    final query = traductions[nom] ?? nom;
+    // On utilise le tag 'city' ou 'landmark' pour que ce soit comme les villes
+    return 'https://loremflickr.com/800/600/$query,landmark?lock=1';
+  }
+
   @override
   Widget build(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.all(24),
+    return Column(
       children: [
-        AdminDataTable(
-          title: 'Gestion des pays',
-          subtitle: '${_pays.length} pays enregistrés',
-          addLabel: 'Ajouter un pays',
-          onAdd: () => _showFormDialog(),
-          searchController: _searchController,
-          onSearch: (v) => _loadPays(search: v),
-          isLoading: _loading,
-          columns: const ['Nom', 'Continent', 'Langue', 'Monnaie', 'Climat', 'Actions'],
-          rows: _pays.map((p) => DataRow(cells: [
-            DataCell(Row(children: [
-              if (p['image_url'] != null && (p['image_url'] as String).isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.only(right: 10),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(6),
-                    child: Image.network(p['image_url'], width: 36, height: 36, fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => Container(width: 36, height: 36, color: AdminTheme.surfaceLight, child: const Icon(Icons.image, size: 16, color: AdminTheme.textMuted))),
+        // ── EN-TÊTE ET RECHERCHE ──
+        Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: AdminTheme.surface,
+            border: Border(bottom: BorderSide(color: AdminTheme.surfaceBorder)),
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _searchController,
+                  onChanged: (v) => _loadPays(search: v),
+                  decoration: InputDecoration(
+                    hintText: 'Rechercher un pays...',
+                    prefixIcon: const Icon(Icons.search_rounded, color: AdminTheme.textMuted),
+                    filled: true,
+                    fillColor: AdminTheme.background,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: BorderSide.none,
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                   ),
                 ),
-              Text(p['nom'] ?? '', style: const TextStyle(fontWeight: FontWeight.w500)),
-            ])),
-            DataCell(Text(p['continent'] ?? '-')),
-            DataCell(Text(p['langue'] ?? '-')),
-            DataCell(Text(p['monnaie'] ?? '-')),
-            DataCell(Text(p['climat'] ?? '-')),
-            DataCell(AdminActionButtons(
-              onEdit: () => _showFormDialog(existing: p),
-              onDelete: () => _deletePays(p),
-            )),
-          ])).toList(),
+              ),
+              const SizedBox(width: 16),
+              ElevatedButton.icon(
+                onPressed: () => _showFormDialog(),
+                icon: const Icon(Icons.add_rounded),
+                label: const Text('Nouveau Pays'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AdminTheme.accent,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                ),
+              ),
+            ],
+          ),
+        ),
+        
+        // ── GRILLE DE PAYS ──
+        Expanded(
+          child: _loading
+              ? const Center(child: CircularProgressIndicator(color: AdminTheme.accent))
+              : _pays.isEmpty
+                  ? const Center(child: Text('Aucun pays trouvé', style: AdminTheme.headingMd))
+                  : GridView.builder(
+                      padding: const EdgeInsets.all(24),
+                      gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                        maxCrossAxisExtent: 350,
+                        childAspectRatio: 0.85,
+                        crossAxisSpacing: 20,
+                        mainAxisSpacing: 20,
+                      ),
+                      itemCount: _pays.length,
+                      itemBuilder: (context, index) {
+                        final p = _pays[index];
+                        final imageUrl = _getFlagOrImage(p);
+                        
+                        return Container(
+                          decoration: BoxDecoration(
+                            borderRadius: AdminTheme.radiusLg,
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.15),
+                                blurRadius: 15,
+                                offset: const Offset(0, 8),
+                              ),
+                            ],
+                          ),
+                          child: ClipRRect(
+                            borderRadius: AdminTheme.radiusLg,
+                            child: Stack(
+                              fit: StackFit.expand,
+                              children: [
+                                // Image de fond
+                                Image.network(
+                                  imageUrl,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (_, __, ___) => Container(color: AdminTheme.surfaceLight),
+                                ),
+                                
+                                // Dégradé sombre
+                                Container(
+                                  decoration: BoxDecoration(
+                                    gradient: LinearGradient(
+                                      begin: Alignment.topCenter,
+                                      end: Alignment.bottomCenter,
+                                      colors: [
+                                        Colors.black.withOpacity(0.1),
+                                        Colors.black.withOpacity(0.85),
+                                      ],
+                                      stops: const [0.3, 1.0],
+                                    ),
+                                  ),
+                                ),
+                                
+                                // Contenu de la carte
+                                Padding(
+                                  padding: const EdgeInsets.all(20),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      // Boutons d'action (haut)
+                                      Row(
+                                        mainAxisAlignment: MainAxisAlignment.end,
+                                        children: [
+                                          _buildGlassIconButton(Icons.edit_rounded, () => _showFormDialog(existing: p)),
+                                          const SizedBox(width: 8),
+                                          _buildGlassIconButton(Icons.delete_rounded, () => _deletePays(p), isDanger: true),
+                                        ],
+                                      ),
+                                      
+                                      const Spacer(),
+                                      
+                                      // Badges
+                                      Wrap(
+                                        spacing: 6,
+                                        runSpacing: 6,
+                                        children: [
+                                          if (p['continent'] != null && p['continent'].toString().isNotEmpty)
+                                            _buildBadge(p['continent'], Icons.public_rounded, AdminTheme.info),
+                                          if (p['monnaie'] != null && p['monnaie'].toString().isNotEmpty)
+                                            _buildBadge(p['monnaie'], Icons.monetization_on_rounded, AdminTheme.warning),
+                                        ],
+                                      ),
+                                      
+                                      const SizedBox(height: 12),
+                                      
+                                      // Titre
+                                      Text(
+                                        p['nom'] ?? 'Inconnu',
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 24,
+                                          fontWeight: FontWeight.w800,
+                                          height: 1.1,
+                                        ),
+                                      ),
+                                      
+                                      if (p['langue'] != null && p['langue'].toString().isNotEmpty) ...[
+                                        const SizedBox(height: 6),
+                                        Text(
+                                          'Langue : ${p['langue']}',
+                                          style: const TextStyle(
+                                            color: Colors.white70,
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                      ],
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
         ),
       ],
+    );
+  }
+
+  Widget _buildGlassIconButton(IconData icon, VoidCallback onTap, {bool isDanger = false}) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: isDanger ? AdminTheme.danger.withOpacity(0.8) : Colors.white.withOpacity(0.2),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.white.withOpacity(0.3)),
+          ),
+          child: Icon(icon, color: Colors.white, size: 18),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBadge(String text, IconData icon, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.95),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: Colors.white, size: 12),
+          const SizedBox(width: 4),
+          Text(
+            text,
+            style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
+          ),
+        ],
+      ),
     );
   }
 }

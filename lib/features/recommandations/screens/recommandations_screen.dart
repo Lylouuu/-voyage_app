@@ -175,7 +175,7 @@ class _RecommandationsScreenState extends State<RecommandationsScreen> with Sing
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.darkNavy,
+      backgroundColor: const Color(0xFFF4F9FF),
       bottomNavigationBar: _buildBottomNav(),
       body: Stack(
         children: [
@@ -186,9 +186,8 @@ class _RecommandationsScreenState extends State<RecommandationsScreen> with Sing
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
                 colors: [
-                  Color(0xFF0F1B2D),
-                  Color(0xFF0A1628),
-                  Color(0xFF0D1F3C), // Slight depth
+                  Color(0xFFF4F9FF),
+                  Color(0xFFEBF5FB),
                 ],
               ),
             ),
@@ -200,12 +199,12 @@ class _RecommandationsScreenState extends State<RecommandationsScreen> with Sing
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        CircularProgressIndicator(color: AppTheme.limeGreen),
+                        CircularProgressIndicator(color: Color(0xFF4DB6E8)),
                         SizedBox(height: 24),
                         Text(
                           'Analyse IA en cours...',
                           style: TextStyle(
-                            color: Colors.white70,
+                            color: Color(0xFF0A192F),
                             fontSize: 16,
                             fontWeight: FontWeight.w500,
                           ),
@@ -281,20 +280,16 @@ class _RecommandationsScreenState extends State<RecommandationsScreen> with Sing
             alignment: Alignment.centerLeft,
             child: GestureDetector(
               onTap: () => Navigator.pop(context),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(14),
-                child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                  child: Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.08),
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: Colors.white.withOpacity(0.1)),
-                    ),
-                    child: Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white.withOpacity(0.9), size: 18),
-                  ),
+              child: Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(14),
+                  boxShadow: [
+                    BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4)),
+                  ],
                 ),
+                child: const Icon(Icons.arrow_back_ios_new_rounded, color: Color(0xFF4A6580), size: 18),
               ),
             ),
           ),
@@ -305,14 +300,14 @@ class _RecommandationsScreenState extends State<RecommandationsScreen> with Sing
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
-                    colors: [Color(0xFF7C3AED), Color(0xFF00C9B1)],
+                    colors: [Color(0xFF4DB6E8), Color(0xFF1A7EC8)],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFF00C9B1).withOpacity(0.3),
+                      color: const Color(0xFF4DB6E8).withOpacity(0.3),
                       blurRadius: 16,
                       offset: const Offset(0, 4),
                     ),
@@ -330,14 +325,14 @@ class _RecommandationsScreenState extends State<RecommandationsScreen> with Sing
                       style: TextStyle(
                         fontSize: 26,
                         fontWeight: FontWeight.bold,
-                        color: Colors.white,
+                        color: Color(0xFF0A192F),
                         letterSpacing: -0.5,
                       ),
                     ),
                     SizedBox(height: 2),
                     Text(
                       'Destinations choisies pour vous',
-                      style: TextStyle(fontSize: 14, color: Colors.white70),
+                      style: TextStyle(fontSize: 14, color: Color(0xFF4A6580)),
                     ),
                   ],
                 ),
@@ -372,26 +367,27 @@ class _RecommandationsScreenState extends State<RecommandationsScreen> with Sing
   }
 
   Widget _buildGlassPref(String emoji, String text) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(20),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.06),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: Colors.white.withOpacity(0.1)),
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFF4DB6E8).withOpacity(0.1)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.02),
+            blurRadius: 5,
+            offset: const Offset(0, 2),
           ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(emoji, style: const TextStyle(fontSize: 14)),
-              const SizedBox(width: 6),
-              Text(text, style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w500)),
-            ],
-          ),
-        ),
+        ],
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(emoji, style: const TextStyle(fontSize: 14)),
+          const SizedBox(width: 6),
+          Text(text, style: const TextStyle(color: Color(0xFF4A6580), fontSize: 13, fontWeight: FontWeight.w600)),
+        ],
       ),
     );
   }
@@ -400,56 +396,57 @@ class _RecommandationsScreenState extends State<RecommandationsScreen> with Sing
   // AI INSIGHT CARD
   // ─────────────────────────────────────────────
   Widget _buildInsightCard() {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(16),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: const Color(0xFF162544).withOpacity(0.4),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Colors.white.withOpacity(0.05)),
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFF4DB6E8).withOpacity(0.1)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 15,
+            offset: const Offset(0, 5),
           ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: AppTheme.limeGreen.withOpacity(0.15),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(Icons.psychology_rounded, color: AppTheme.limeGreen, size: 20),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Analyse terminée',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 15,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Basé sur vos préférences méticuleuses, voici le classement exact des destinations qui correspondent parfaitement à votre profil de voyage.',
-                      style: TextStyle(
-                        color: Colors.white.withOpacity(0.6),
-                        fontSize: 13,
-                        height: 1.4,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
+        ],
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: const Color(0xFF4DB6E8).withOpacity(0.15),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(Icons.psychology_rounded, color: Color(0xFF4DB6E8), size: 20),
           ),
-        ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Analyse terminée',
+                  style: TextStyle(
+                    color: Color(0xFF0A192F),
+                    fontWeight: FontWeight.bold,
+                    fontSize: 15,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Basé sur vos préférences méticuleuses, voici le classement exact des destinations qui correspondent parfaitement à votre profil de voyage.',
+                  style: const TextStyle(
+                    color: Color(0xFF4A6580),
+                    fontSize: 13,
+                    height: 1.4,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -461,8 +458,15 @@ class _RecommandationsScreenState extends State<RecommandationsScreen> with Sing
     return Container(
       padding: EdgeInsets.only(bottom: MediaQuery.of(context).padding.bottom + 8, top: 12),
       decoration: BoxDecoration(
-        color: const Color(0xFF0A1628), // Same as bottom of background gradient
-        border: Border(top: BorderSide(color: Colors.white.withOpacity(0.05))),
+        color: Colors.white,
+        border: Border(top: BorderSide(color: Colors.black.withOpacity(0.05))),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 20,
+            offset: const Offset(0, -5),
+          ),
+        ],
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -501,7 +505,7 @@ class _RecommandationsScreenState extends State<RecommandationsScreen> with Sing
               padding: const EdgeInsets.all(8),
               child: Icon(
                 icon,
-                color: Colors.white.withOpacity(0.4),
+                color: const Color(0xFF4A6580).withOpacity(0.5),
                 size: 22,
               ),
             ),
@@ -509,9 +513,9 @@ class _RecommandationsScreenState extends State<RecommandationsScreen> with Sing
             Text(
               label,
               style: TextStyle(
-                color: Colors.white.withOpacity(0.35),
+                color: const Color(0xFF4A6580).withOpacity(0.5),
                 fontSize: 10,
-                fontWeight: FontWeight.w400,
+                fontWeight: FontWeight.w500,
               ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
@@ -531,11 +535,10 @@ class _RecommandationsScreenState extends State<RecommandationsScreen> with Sing
         gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Color(0xFF7C3AED), Color(0xFF9F5AFF), Color(0xFFB47AFF)],
+          colors: [Color(0xFF4DB6E8), Color(0xFF1A7EC8)],
         ),
         boxShadow: [
-          BoxShadow(color: const Color(0xFF7C3AED).withOpacity(0.4), blurRadius: 16, offset: const Offset(0, 4)),
-          BoxShadow(color: Colors.white.withOpacity(0.2), spreadRadius: 2, blurRadius: 4), // Highlight to show it's active
+          BoxShadow(color: const Color(0xFF4DB6E8).withOpacity(0.4), blurRadius: 16, offset: const Offset(0, 4)),
         ],
       ),
       child: const Center(

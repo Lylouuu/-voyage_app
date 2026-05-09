@@ -422,7 +422,7 @@ class _ItineraireScreenState extends State<ItineraireScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.darkNavy, // Cosmic deep space blue
+      backgroundColor: const Color(0xFFF4F9FF), // Light Theme
       body: _loading
           ? const Center(child: CircularProgressIndicator(color: AppTheme.limeGreen))
           : CustomScrollView(
@@ -451,26 +451,26 @@ class _ItineraireScreenState extends State<ItineraireScreen> {
     return SliverAppBar(
       expandedHeight: 280,
       pinned: true,
-      backgroundColor: AppTheme.darkNavy,
+      backgroundColor: const Color(0xFFF4F9FF),
       elevation: 0,
       stretch: true,
       leading: Center(
         child: GestureDetector(
           onTap: () => Navigator.pop(context),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(16),
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-              child: Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.3),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.white.withOpacity(0.2)),
+          child: Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(14),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
                 ),
-                child: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 18),
-              ),
+              ],
             ),
+            child: const Icon(Icons.arrow_back_ios_new_rounded, color: Color(0xFF4A6580), size: 18),
           ),
         ),
       ),
@@ -484,17 +484,17 @@ class _ItineraireScreenState extends State<ItineraireScreen> {
               CachedNetworkImage(
                 imageUrl: _villeImageUrl!,
                 fit: BoxFit.cover,
-                placeholder: (_, __) => Container(color: AppTheme.darkNavyLight),
-                errorWidget: (_, __, ___) => Container(color: AppTheme.darkNavyLight),
+                placeholder: (_, __) => Container(color: const Color(0xFFF4F9FF)),
+                errorWidget: (_, __, ___) => Container(color: const Color(0xFFF4F9FF)),
               )
             else
               Container(
                 decoration: const BoxDecoration(
-                  gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [Color(0xFF00C9B1), Color(0xFF7C3AED)]),
+                  gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [Color(0xFF4DB6E8), Color(0xFF1A7EC8)]),
                 ),
               ),
             
-            // Atmospheric gradient overlay bridging the photo to the dark UI
+            // Atmospheric gradient overlay bridging the photo to the light UI
             Container(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
@@ -502,9 +502,9 @@ class _ItineraireScreenState extends State<ItineraireScreen> {
                   end: Alignment.bottomCenter,
                   colors: [
                     Colors.black.withOpacity(0.3),  // For upper back button readability
-                    Colors.black.withOpacity(0.1),
-                    AppTheme.darkNavy.withOpacity(0.8), // Start blending
-                    AppTheme.darkNavy,            // Solid bridge
+                    Colors.white.withOpacity(0.1),
+                    const Color(0xFFF4F9FF).withOpacity(0.8), // Start blending
+                    const Color(0xFFF4F9FF),            // Solid bridge
                   ],
                   stops: const [0.0, 0.4, 0.8, 1.0],
                 ),
@@ -519,12 +519,12 @@ class _ItineraireScreenState extends State<ItineraireScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
+                  const Text(
                     'Itinéraire',
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
-                      color: AppTheme.limeGreen,
+                      color: Color(0xFF4DB6E8),
                       letterSpacing: 2,
                     ),
                   ),
@@ -534,7 +534,7 @@ class _ItineraireScreenState extends State<ItineraireScreen> {
                     style: const TextStyle(
                       fontSize: 34,
                       fontWeight: FontWeight.w900,
-                      color: Colors.white,
+                      color: Color(0xFF0A192F),
                       letterSpacing: -1,
                       height: 1.1,
                     ),
@@ -637,7 +637,7 @@ class _ItineraireScreenState extends State<ItineraireScreen> {
                 // Date text
                 Text(
                   _formatDate(date),
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white.withOpacity(0.9)),
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0A192F)),
                 ),
                 const Spacer(),
                 
@@ -647,10 +647,10 @@ class _ItineraireScreenState extends State<ItineraireScreen> {
                   child: Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.05),
+                      color: const Color(0xFF4DB6E8).withOpacity(0.1),
                       shape: BoxShape.circle,
                     ),
-                    child: Icon(Icons.add_rounded, color: Colors.white.withOpacity(0.6), size: 20),
+                    child: const Icon(Icons.add_rounded, color: Color(0xFF4DB6E8), size: 20),
                   ),
                 ),
               ],
@@ -661,9 +661,9 @@ class _ItineraireScreenState extends State<ItineraireScreen> {
           
           // Flowing Timeline
           if (items.isEmpty)
-            Padding(
-              padding: const EdgeInsets.only(left: 30),
-              child: Text("Temps libre pour flâner", style: TextStyle(color: Colors.white.withOpacity(0.3), fontStyle: FontStyle.italic)),
+            const Padding(
+              padding: EdgeInsets.only(left: 30),
+              child: Text("Temps libre pour flâner", style: TextStyle(color: Color(0xFF4A6580), fontStyle: FontStyle.italic)),
             )
           else
             ...items.asMap().entries.map((entry) {
@@ -718,7 +718,7 @@ class _ItineraireScreenState extends State<ItineraireScreen> {
                           end: Alignment.bottomCenter,
                           colors: [
                             slotColor.withOpacity(0.6),
-                            Colors.white.withOpacity(0.05), // Fades to neutral
+                            const Color(0xFF0A192F).withOpacity(0.05), // Fades to neutral
                           ],
                         ),
                         borderRadius: BorderRadius.circular(2),
@@ -763,9 +763,9 @@ class _ItineraireScreenState extends State<ItineraireScreen> {
       child: Center(
         child: Column(
           children: [
-            Icon(Icons.flight_takeoff_rounded, size: 70, color: Colors.white.withOpacity(0.05)),
+            Icon(Icons.flight_takeoff_rounded, size: 70, color: const Color(0xFF4DB6E8).withOpacity(0.2)),
             const SizedBox(height: 24),
-            Text('Planning Vide', style: TextStyle(fontSize: 22, color: Colors.white.withOpacity(0.5), fontWeight: FontWeight.bold)),
+            const Text('Planning Vide', style: TextStyle(fontSize: 22, color: Color(0xFF4A6580), fontWeight: FontWeight.bold)),
           ],
         ),
       ),
@@ -788,15 +788,15 @@ class _ItineraireScreenState extends State<ItineraireScreen> {
         child: Container(
           height: MediaQuery.of(context).size.height * 0.7,
           decoration: BoxDecoration(
-            color: const Color(0xFF162544).withOpacity(0.8), // Glass deep
-            border: Border(top: BorderSide(color: Colors.white.withOpacity(0.1))),
+            color: Colors.white, // Glass deep
+            border: Border(top: BorderSide(color: const Color(0xFF4DB6E8).withOpacity(0.1))),
           ),
           child: Column(
             children: [
-              Container(margin: const EdgeInsets.only(top: 10), width: 50, height: 5, decoration: BoxDecoration(color: Colors.white.withOpacity(0.3), borderRadius: BorderRadius.circular(10))),
+              Container(margin: const EdgeInsets.only(top: 10), width: 50, height: 5, decoration: BoxDecoration(color: const Color(0xFF4DB6E8).withOpacity(0.3), borderRadius: BorderRadius.circular(10))),
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 24),
-                child: Text(titre, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: Colors.white)),
+                child: Text(titre, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: Color(0xFF0A192F))),
               ),
               Expanded(
                 child: ListView.builder(
@@ -811,9 +811,9 @@ class _ItineraireScreenState extends State<ItineraireScreen> {
                         margin: const EdgeInsets.only(bottom: 12),
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.05),
+                          color: const Color(0xFFF4F9FF),
                           borderRadius: BorderRadius.circular(18),
-                          border: Border.all(color: Colors.white.withOpacity(0.02)),
+                          border: Border.all(color: const Color(0xFF4DB6E8).withOpacity(0.05)),
                         ),
                         child: Row(
                           children: [
@@ -827,13 +827,13 @@ class _ItineraireScreenState extends State<ItineraireScreen> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(titre2(item), style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white)),
+                                  Text(titre2(item), style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF0A192F))),
                                   const SizedBox(height: 4),
-                                  Text(sousTitre(item), style: TextStyle(fontSize: 13, color: Colors.white.withOpacity(0.6))),
+                                  Text(sousTitre(item), style: const TextStyle(fontSize: 13, color: Color(0xFF4A6580))),
                                 ],
                               ),
                             ),
-                            Icon(Icons.chevron_right_rounded, color: Colors.white.withOpacity(0.2)),
+                            Icon(Icons.chevron_right_rounded, color: const Color(0xFF4DB6E8).withOpacity(0.5)),
                           ],
                         ),
                       ),
@@ -895,8 +895,7 @@ class _VibrantTimelineCardState extends State<_VibrantTimelineCard> {
             child: Container(
               padding: const EdgeInsets.all(18),
               decoration: BoxDecoration(
-                // Intense glow base
-                color: Colors.white.withOpacity(0.04), 
+                color: Colors.white, 
                 borderRadius: BorderRadius.circular(22),
                 border: Border.all(color: widget.slotColor.withOpacity(0.15), width: 1.5),
                 boxShadow: [
@@ -916,7 +915,7 @@ class _VibrantTimelineCardState extends State<_VibrantTimelineCard> {
                           children: [
                             Text(
                               widget.item['nom'] ?? 'Étape',
-                              style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: Colors.white, height: 1.2),
+                              style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: Color(0xFF0A192F), height: 1.2),
                             ),
                             const SizedBox(height: 6),
                             Row(
@@ -929,7 +928,7 @@ class _VibrantTimelineCardState extends State<_VibrantTimelineCard> {
                                       : (widget.type == 'hotel') 
                                           ? 'Hébergement' 
                                           : (widget.item['categorie'] ?? ''),
-                                  style: TextStyle(fontSize: 13, color: Colors.white.withOpacity(0.7), fontWeight: FontWeight.w500),
+                                  style: const TextStyle(fontSize: 13, color: Color(0xFF4A6580), fontWeight: FontWeight.w500),
                                 ),
                               ],
                             ),
@@ -961,12 +960,12 @@ class _VibrantTimelineCardState extends State<_VibrantTimelineCard> {
                       if (widget.item['duree'] != null && widget.item['duree'].toString().isNotEmpty) ...[
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                          decoration: BoxDecoration(color: Colors.white.withOpacity(0.05), borderRadius: BorderRadius.circular(6)),
+                          decoration: BoxDecoration(color: const Color(0xFFF4F9FF), borderRadius: BorderRadius.circular(6)),
                           child: Row(
                             children: [
-                              Icon(Icons.schedule_rounded, size: 12, color: Colors.white.withOpacity(0.6)),
+                              const Icon(Icons.schedule_rounded, size: 12, color: Color(0xFF4A6580)),
                               const SizedBox(width: 4),
-                              Text(widget.item['duree'], style: TextStyle(fontSize: 12, color: Colors.white.withOpacity(0.8))),
+                              Text(widget.item['duree'], style: const TextStyle(fontSize: 12, color: Color(0xFF4A6580))),
                             ],
                           ),
                         ),
@@ -975,14 +974,14 @@ class _VibrantTimelineCardState extends State<_VibrantTimelineCard> {
                       if (widget.item['prix'] != null || widget.item['prix_moyen'] != null) ...[
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                          decoration: BoxDecoration(color: Colors.white.withOpacity(0.05), borderRadius: BorderRadius.circular(6)),
+                          decoration: BoxDecoration(color: const Color(0xFFF4F9FF), borderRadius: BorderRadius.circular(6)),
                           child: Row(
                             children: [
-                              Icon(Icons.euro_rounded, size: 12, color: Colors.white.withOpacity(0.6)),
+                              const Icon(Icons.euro_rounded, size: 12, color: Color(0xFF4A6580)),
                               const SizedBox(width: 4),
                               Text(
                                 '${widget.item['prix'] ?? widget.item['prix_moyen']}€', 
-                                style: TextStyle(fontSize: 12, color: Colors.white.withOpacity(0.8), fontWeight: FontWeight.bold)
+                                style: const TextStyle(fontSize: 12, color: Color(0xFF4A6580), fontWeight: FontWeight.bold)
                               ),
                             ],
                           ),
@@ -997,11 +996,11 @@ class _VibrantTimelineCardState extends State<_VibrantTimelineCard> {
                             onTap: widget.onEdit,
                             child: Container(
                               padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.02),
+                              decoration: const BoxDecoration(
+                                color: Color(0xFFF4F9FF),
                                 shape: BoxShape.circle,
                               ),
-                              child: Icon(Icons.edit_rounded, size: 16, color: Colors.white.withOpacity(0.2)), // Low opacity
+                              child: const Icon(Icons.edit_rounded, size: 16, color: Color(0xFF4DB6E8)), // Low opacity
                             ),
                           ),
                           if (widget.type == 'activite') ...[
@@ -1009,11 +1008,11 @@ class _VibrantTimelineCardState extends State<_VibrantTimelineCard> {
                               onTap: widget.onDelete,
                               child: Container(
                                 padding: const EdgeInsets.all(8),
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withOpacity(0.02),
+                                decoration: const BoxDecoration(
+                                  color: Color(0xFFFFF0F0),
                                   shape: BoxShape.circle,
                                 ),
-                                child: Icon(Icons.close_rounded, size: 16, color: Colors.redAccent.withOpacity(0.3)), // Low opacity
+                                child: Icon(Icons.close_rounded, size: 16, color: Colors.redAccent.withOpacity(0.8)), // Low opacity
                               ),
                             ),
                           ]

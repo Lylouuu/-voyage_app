@@ -2,18 +2,16 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:video_player/video_player.dart';
-import 'package:voyage_app/core/theme/app_theme.dart';
 import 'package:voyage_app/features/auth/widgets/auth_text__field.dart';
 import 'package:voyage_app/features/auth/screens/forgot_password_screen.dart';
-import 'package:voyage_app/features/home/screens/home_screen.dart';
 
-// ─── Design palette ──────────────────────────────────────────────────────────
-const _kNavy     = Color(0xFF080D1A);
-const _kDeepBlue = Color(0xFF0D1730);
-const _kGreen    = Color(0xFFCBF266);
-const _kCyan     = Color(0xFF00D4FF);
-const _kGreenDim = Color(0xFFA8CC4E);
-// ─────────────────────────────────────────────────────────────────────────────
+// ── Palette light & épurée ─────────────────────────────────────────────────
+const _kBg       = Color(0xFFF4F9FF); // Fond principal bleu très pâle
+const _kSky      = Color(0xFF4DB6E8); // Bleu ciel
+const _kSkyDeep  = Color(0xFF1A7EC8); // Bleu océan
+const _kTextDark = Color(0xFF0A192F); // Texte principal
+const _kTextMid  = Color(0xFF4A6580); // Texte secondaire
+// ──────────────────────────────────────────────────────────────────────────
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -24,12 +22,11 @@ class AuthScreen extends StatefulWidget {
 
 class _AuthScreenState extends State<AuthScreen>
     with SingleTickerProviderStateMixin {
-  // ── Controllers ────────────────────────────────────────────────────────────
   late TabController _tabController;
   late VideoPlayerController _videoController;
   bool _videoReady = false;
 
-  final _formKey         = GlobalKey<FormState>();
+  final _loginFormKey    = GlobalKey<FormState>();
   final _registerFormKey = GlobalKey<FormState>();
 
   final _nomController         = TextEditingController();
@@ -38,11 +35,9 @@ class _AuthScreenState extends State<AuthScreen>
   final _emailRegController    = TextEditingController();
   final _passwordRegController = TextEditingController();
 
-  bool _loading    = false;
-  int  _activeTab  = 0;
-  bool _btnPressed = false;
+  bool _loading   = false;
+  int  _activeTab = 0;
 
-  // ── Local video asset ──────────────────────────────────────────────────────
   static const _videoAsset = 'assets/videos/hover.mp4';
 
   @override
@@ -53,7 +48,6 @@ class _AuthScreenState extends State<AuthScreen>
         if (!_tabController.indexIsChanging) return;
         setState(() => _activeTab = _tabController.index);
       });
-
     _initVideo();
   }
 
@@ -65,9 +59,7 @@ class _AuthScreenState extends State<AuthScreen>
       _videoController.setVolume(0);
       _videoController.play();
       if (mounted) setState(() => _videoReady = true);
-    } catch (_) {
-      // Video failed — graceful fallback to gradient
-    }
+    } catch (_) {}
   }
 
   @override
@@ -82,7 +74,23 @@ class _AuthScreenState extends State<AuthScreen>
     super.dispose();
   }
 
-  // ── Auth logic (unchanged) ────────────────────────────────────────────────
+  // ── Auth logic ────────────────────────────────────────────────────────────
+  Future<void> _signIn() async {
+    if (!_loginFormKey.currentState!.validate()) return;
+    setState(() => _loading = true);
+    try {
+      await Supabase.instance.client.auth.signInWithPassword(
+        email: _emailController.text.trim(),
+        password: _passwordController.text.trim(),
+      );
+      if (mounted) _showSnack('✅ Connecté avec succès !', success: true);
+    } on AuthException catch (e) {
+      if (mounted) _showSnack('❌ ${e.message}', success: false);
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
   Future<void> _signUp() async {
     if (!_registerFormKey.currentState!.validate()) return;
     setState(() => _loading = true);
@@ -92,207 +100,158 @@ class _AuthScreenState extends State<AuthScreen>
         password: _passwordRegController.text.trim(),
         data: {'nom': _nomController.text.trim()},
       );
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: const Text('✅ Compte créé ! Vérifiez votre email.'),
-          backgroundColor: AppTheme.primary,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12)),
-        ));
-      }
+      if (mounted) _showSnack('✅ Compte créé ! Vérifiez votre email.', success: true);
     } on AuthException catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('❌ ${e.message}'),
-          backgroundColor: AppTheme.secondary,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12)),
-        ));
-      }
+      if (mounted) _showSnack('❌ ${e.message}', success: false);
     } finally {
       if (mounted) setState(() => _loading = false);
     }
   }
 
-  Future<void> _signIn() async {
-    if (!_formKey.currentState!.validate()) return;
-    setState(() => _loading = true);
-    try {
-      await Supabase.instance.client.auth.signInWithPassword(
-        email: _emailController.text.trim(),
-        password: _passwordController.text.trim(),
-      );
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: const Text('✅ Connecté avec succès !'),
-          backgroundColor: AppTheme.primary,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12)),
-        ));
-      }
-    } on AuthException catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('❌ ${e.message}'),
-          backgroundColor: AppTheme.secondary,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12)),
-        ));
-      }
-    } finally {
-      if (mounted) setState(() => _loading = false);
-    }
+  void _showSnack(String msg, {required bool success}) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(msg, style: const TextStyle(color: Colors.white)),
+      backgroundColor: success ? _kSkyDeep : Colors.redAccent,
+      behavior: SnackBarBehavior.floating,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      margin: const EdgeInsets.all(16),
+    ));
   }
 
-  // ═════════════════════════════════════════════════════════════════════════════
+  // ═════════════════════════════════════════════════════════════════════════
   //  BUILD
-  // ═════════════════════════════════════════════════════════════════════════════
+  // ═════════════════════════════════════════════════════════════════════════
   @override
   Widget build(BuildContext context) {
     final screenH = MediaQuery.of(context).size.height;
-    final heroH = screenH * 0.48;   // 48 % hero
+    final videoH  = screenH * 0.44;
 
     return Scaffold(
-      backgroundColor: _kNavy,
-      body: Stack(
-        children: [
-          // ── 1. VIDEO HERO (top ~48 %) ─────────────────────────────────────
-          SizedBox(
-            width: double.infinity,
-            height: heroH + 60,  // +60 for curved overlap
-            child: Stack(
-              fit: StackFit.expand,
-              children: [
-                // Video or gradient fallback
-                _videoReady
-                    ? FittedBox(
-                        fit: BoxFit.cover,
-                        child: SizedBox(
-                          width: _videoController.value.size.width,
-                          height: _videoController.value.size.height,
-                          child: VideoPlayer(_videoController),
-                        ),
-                      )
-                    : Container(
-                        decoration: const BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
-                            colors: [
-                              Color(0xFF1A2980),
-                              Color(0xFF26D0CE),
-                            ],
-                          ),
-                        ),
-                      ),
+      backgroundColor: _kBg,
+      body: SingleChildScrollView(
+        physics: const BouncingScrollPhysics(),
+        child: Column(
+          children: [
+            // ── 1. VIDÉO HERO ──────────────────────────────────────────────
+            _buildVideoHero(videoH),
 
-                // Dark gradient overlay for text readability
-                Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [
-                        Colors.black.withValues(alpha: 0.25),
-                        Colors.black.withValues(alpha: 0.10),
-                        Colors.black.withValues(alpha: 0.50),
-                        _kNavy.withValues(alpha: 0.95),
-                      ],
-                      stops: const [0.0, 0.3, 0.7, 1.0],
-                    ),
-                  ),
-                ),
-              ],
+            // ── 2. FORMULAIRE (design clair) ───────────────────────────────
+            Transform.translate(
+              offset: const Offset(0, -32),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: _buildCard(),
+              ),
             ),
-          ),
 
-          // ── 2. SCROLLABLE CONTENT ─────────────────────────────────────────
-          SafeArea(
-            child: SingleChildScrollView(
-              physics: const BouncingScrollPhysics(),
+            Transform.translate(
+              offset: const Offset(0, -20),
               child: Column(
                 children: [
-                  // Hero text overlay area
-                  SizedBox(
-                    height: heroH - 40,
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 28),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Logo row
-                          _buildLogo(),
-                          const SizedBox(height: 20),
-
-                          // Big title
-                          const Text(
-                            'Travel,\nsimplified.',
-                            style: TextStyle(
-                              fontSize: 38,
-                              fontWeight: FontWeight.w800,
-                              color: Colors.white,
-                              height: 1.15,
-                              letterSpacing: -0.5,
-                              shadows: [
-                                Shadow(
-                                  color: Colors.black54,
-                                  blurRadius: 20,
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-
-                          // Subtitle
-                          Text(
-                            'Plan, explore, and experience the\nworld effortlessly.',
-                            style: TextStyle(
-                              fontSize: 14.5,
-                              color: Colors.white.withValues(alpha: 0.75),
-                              height: 1.5,
-                              letterSpacing: 0.2,
-                              shadows: const [
-                                Shadow(
-                                  color: Colors.black38,
-                                  blurRadius: 12,
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 20),
-
-                          // Dot indicator
-                          _buildDotIndicator(),
-                          const SizedBox(height: 24),
-                        ],
-                      ),
-                    ),
-                  ),
-
-                  // ── AUTH PANEL ──────────────────────────────────────────────
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: _buildAuthPanel(),
-                  ),
-
-                  const SizedBox(height: 24),
-
-                  // Divider + Google
                   _buildOrDivider(),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 14),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 20),
                     child: _buildGoogleButton(),
                   ),
-
                   const SizedBox(height: 28),
                   _buildFooter(),
                   const SizedBox(height: 24),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ══════════════════════════════════════════════════════════
+  //  WIDGETS
+  // ══════════════════════════════════════════════════════════
+
+  // ── Vidéo hero avec overlay dégradé ───────────────────────────────────
+  Widget _buildVideoHero(double videoH) {
+    return SizedBox(
+      width: double.infinity,
+      height: videoH,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          // Vidéo ou fallback dégradé
+          _videoReady
+              ? FittedBox(
+                  fit: BoxFit.cover,
+                  child: SizedBox(
+                    width: _videoController.value.size.width,
+                    height: _videoController.value.size.height,
+                    child: VideoPlayer(_videoController),
+                  ),
+                )
+              : Container(
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        Color(0xFF1A4F7A),
+                        Color(0xFF4DB6E8),
+                      ],
+                    ),
+                  ),
+                ),
+
+          // Overlay dégradé vers le blanc en bas (transition douce)
+          Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Colors.black.withOpacity(0.10),
+                  Colors.transparent,
+                  _kBg.withOpacity(0.50),
+                  _kBg.withOpacity(0.92),
+                ],
+                stops: const [0.0, 0.40, 0.75, 1.0],
+              ),
+            ),
+          ),
+
+          // Texte en bas de la vidéo
+          SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(26, 0, 26, 28),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.end,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Logo
+                  _buildLogo(),
+                  const SizedBox(height: 14),
+                  // Titre
+                  const Text(
+                    'Voyagez,\nsans limites.',
+                    style: TextStyle(
+                      fontSize: 32,
+                      fontWeight: FontWeight.w900,
+                      color: Colors.white,
+                      height: 1.2,
+                      letterSpacing: -0.5,
+                      shadows: [
+                        Shadow(color: Colors.black45, blurRadius: 20),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Planifiez, explorez, vivez.',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.white.withOpacity(0.78),
+                      letterSpacing: 0.1,
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -302,153 +261,95 @@ class _AuthScreenState extends State<AuthScreen>
     );
   }
 
-  // ═════════════════════════════════════════════════════════════════════════════
-  //  WIDGETS
-  // ═════════════════════════════════════════════════════════════════════════════
-
-  // ── Logo (compact) ────────────────────────────────────────────────────────
+  // ── Logo NEX✈RIP ─────────────────────────────────────────────────────
   Widget _buildLogo() {
     return Row(
       children: [
-        ShaderMask(
-          shaderCallback: (b) => const LinearGradient(
-            colors: [Colors.white, Color(0xFFD8E4FF)],
-          ).createShader(b),
-          child: const Text(
-            'NEX',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 22,
-              fontWeight: FontWeight.w900,
-              letterSpacing: 2,
-            ),
+        const Text(
+          'NEX',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 20,
+            fontWeight: FontWeight.w900,
+            letterSpacing: 2,
           ),
         ),
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 2),
-          child: ShaderMask(
-            shaderCallback: (b) => const LinearGradient(
-              colors: [_kGreen, _kGreen],
-            ).createShader(b),
-            child: const Icon(
-              Icons.airplanemode_active_rounded,
-              color: Colors.white,
-              size: 20,
-            ),
+          padding: const EdgeInsets.symmetric(horizontal: 3),
+          child: Icon(
+            Icons.airplanemode_active_rounded,
+            color: Colors.white.withOpacity(0.9),
+            size: 18,
           ),
         ),
-        ShaderMask(
-          shaderCallback: (b) => const LinearGradient(
-            colors: [Color(0xFFD8E4FF), Colors.white],
-          ).createShader(b),
-          child: const Text(
-            'RIP',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 22,
-              fontWeight: FontWeight.w900,
-              letterSpacing: 2,
-            ),
+        const Text(
+          'RIP',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 20,
+            fontWeight: FontWeight.w900,
+            letterSpacing: 2,
           ),
         ),
       ],
     );
   }
 
-  // ── Dot indicator ─────────────────────────────────────────────────────────
-  Widget _buildDotIndicator() {
-    return Row(
-      children: List.generate(3, (i) {
-        final active = i == 0;
-        return AnimatedContainer(
-          duration: const Duration(milliseconds: 300),
-          margin: const EdgeInsets.only(right: 6),
-          width: active ? 24 : 8,
-          height: 4,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(2),
-            gradient: active
-                ? const LinearGradient(colors: [_kGreen, _kGreen])
-                : null,
-            color: active ? null : Colors.white.withValues(alpha: 0.25),
+  // ── Carte formulaire blanche épurée ───────────────────────────────────
+  Widget _buildCard() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(28),
+        boxShadow: [
+          BoxShadow(
+            color: _kSky.withOpacity(0.10),
+            blurRadius: 30,
+            offset: const Offset(0, 8),
           ),
-        );
-      }),
-    );
-  }
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const SizedBox(height: 24),
+          _buildToggle(),
+          const SizedBox(height: 4),
 
-  // ── Glass auth panel ──────────────────────────────────────────────────────
-  Widget _buildAuthPanel() {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(28),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
-        child: Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(28),
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                Colors.white.withValues(alpha: 0.10),
-                Colors.white.withValues(alpha: 0.04),
-              ],
+          AnimatedSize(
+            duration: const Duration(milliseconds: 280),
+            curve: Curves.easeInOut,
+            child: SizedBox(
+              height: _activeTab == 0 ? 318 : 408,
+              child: TabBarView(
+                controller: _tabController,
+                physics: const NeverScrollableScrollPhysics(),
+                children: [
+                  _buildLoginForm(),
+                  _buildRegisterForm(),
+                ],
+              ),
             ),
-            border: Border.all(
-              color: Colors.white.withValues(alpha: 0.10),
-              width: 1,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.50),
-                blurRadius: 40,
-                offset: const Offset(0, 16),
-              ),
-              BoxShadow(
-                color: _kCyan.withValues(alpha: 0.05),
-                blurRadius: 60,
-                offset: const Offset(0, 8),
-              ),
-            ],
           ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const SizedBox(height: 20),
-              _buildPillToggle(),
-              const SizedBox(height: 4),
-
-              // Forms — Increased height for errors
-              SizedBox(
-                height: _activeTab == 0 ? 360 : 460,
-                child: TabBarView(
-                  controller: _tabController,
-                  physics: const NeverScrollableScrollPhysics(),
-                  children: [
-                    _buildLoginForm(),
-                    _buildRegisterForm(),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
+        ],
       ),
     );
   }
 
-  // ── Pill toggle ───────────────────────────────────────────────────────────
-  Widget _buildPillToggle() {
+  // ── Toggle Connexion / Inscription ─────────────────────────────────────
+  Widget _buildToggle() {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Container(
-        height: 44,
+        height: 48,
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.06),
-          borderRadius: BorderRadius.circular(22),
-          border: Border.all(
-            color: Colors.white.withValues(alpha: 0.08),
-          ),
+          color: const Color(0xFFF0F7FD),
+          borderRadius: BorderRadius.circular(24),
         ),
         child: Stack(
           children: [
@@ -461,14 +362,15 @@ class _AuthScreenState extends State<AuthScreen>
               child: FractionallySizedBox(
                 widthFactor: 0.5,
                 child: Container(
-                  margin: const EdgeInsets.all(3),
+                  margin: const EdgeInsets.all(4),
                   decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(19),
-                    color: _kGreen,
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20),
                     boxShadow: [
                       BoxShadow(
-                        color: _kGreen.withValues(alpha: 0.35),
-                        blurRadius: 12,
+                        color: _kSky.withOpacity(0.18),
+                        blurRadius: 10,
+                        offset: const Offset(0, 3),
                       ),
                     ],
                   ),
@@ -477,8 +379,8 @@ class _AuthScreenState extends State<AuthScreen>
             ),
             Row(
               children: [
-                _pillTab('Connexion', 0),
-                _pillTab('Inscription', 1),
+                _toggleTab('Connexion', 0),
+                _toggleTab('Inscription', 1),
               ],
             ),
           ],
@@ -487,7 +389,7 @@ class _AuthScreenState extends State<AuthScreen>
     );
   }
 
-  Widget _pillTab(String label, int index) {
+  Widget _toggleTab(String label, int index) {
     final active = _activeTab == index;
     return Expanded(
       child: GestureDetector(
@@ -500,12 +402,9 @@ class _AuthScreenState extends State<AuthScreen>
           child: AnimatedDefaultTextStyle(
             duration: const Duration(milliseconds: 200),
             style: TextStyle(
-              fontSize: 13,
+              fontSize: 13.5,
               fontWeight: active ? FontWeight.w700 : FontWeight.w500,
-              color: active
-                  ? _kNavy
-                  : Colors.white.withValues(alpha: 0.40),
-              letterSpacing: 0.2,
+              color: active ? _kSkyDeep : _kTextMid,
             ),
             child: Text(label),
           ),
@@ -514,14 +413,14 @@ class _AuthScreenState extends State<AuthScreen>
     );
   }
 
-  // ── Login form ────────────────────────────────────────────────────────────
+  // ── Formulaire Connexion ───────────────────────────────────────────────
   Widget _buildLoginForm() {
     return SingleChildScrollView(
       physics: const ClampingScrollPhysics(),
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(18, 14, 18, 20),
+        padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
         child: Form(
-          key: _formKey,
+          key: _loginFormKey,
           child: Column(
             children: [
               AuthTextField(
@@ -538,40 +437,32 @@ class _AuthScreenState extends State<AuthScreen>
                 icon: Icons.lock_outline_rounded,
                 controller: _passwordController,
                 isPassword: true,
-                validator: (v) =>
-                    v!.length < 6 ? 'Min 6 caractères' : null,
+                validator: (v) => v!.length < 6 ? 'Min. 6 caractères' : null,
               ),
-              const SizedBox(height: 2),
+              const SizedBox(height: 4),
               Align(
                 alignment: Alignment.centerRight,
                 child: TextButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (_) => const ForgotPasswordScreen()),
-                    );
-                  },
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) => const ForgotPasswordScreen()),
+                  ),
                   style: TextButton.styleFrom(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 4, vertical: 2),
+                        horizontal: 4, vertical: 4),
                   ),
-                  child: ShaderMask(
-                    shaderCallback: (b) => const LinearGradient(
-                      colors: [_kGreen, _kGreen],
-                    ).createShader(b),
-                    child: const Text(
-                      'Mot de passe oublié ?',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                      ),
+                  child: const Text(
+                    'Mot de passe oublié ?',
+                    style: TextStyle(
+                      color: _kSky,
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                 ),
               ),
-              const SizedBox(height: 6),
+              const SizedBox(height: 8),
               _buildCTAButton(label: 'Se connecter', onTap: _signIn),
             ],
           ),
@@ -580,12 +471,12 @@ class _AuthScreenState extends State<AuthScreen>
     );
   }
 
-  // ── Register form ─────────────────────────────────────────────────────────
+  // ── Formulaire Inscription ─────────────────────────────────────────────
   Widget _buildRegisterForm() {
     return SingleChildScrollView(
       physics: const ClampingScrollPhysics(),
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(18, 14, 18, 20),
+        padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
         child: Form(
           key: _registerFormKey,
           child: Column(
@@ -597,7 +488,7 @@ class _AuthScreenState extends State<AuthScreen>
                 controller: _nomController,
                 validator: (v) => v!.isEmpty ? 'Nom requis' : null,
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 14),
               AuthTextField(
                 label: 'Email',
                 hint: 'votre@email.com',
@@ -605,18 +496,17 @@ class _AuthScreenState extends State<AuthScreen>
                 controller: _emailRegController,
                 validator: (v) => v!.isEmpty ? 'Email requis' : null,
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 14),
               AuthTextField(
                 label: 'Mot de passe',
                 hint: '••••••••',
                 icon: Icons.lock_outline_rounded,
                 controller: _passwordRegController,
                 isPassword: true,
-                validator: (v) =>
-                    v!.length < 6 ? 'Min 6 caractères' : null,
+                validator: (v) => v!.length < 6 ? 'Min. 6 caractères' : null,
               ),
-              const SizedBox(height: 18),
-              _buildCTAButton(label: "S'inscrire", onTap: _signUp),
+              const SizedBox(height: 22),
+              _buildCTAButton(label: "Créer mon compte", onTap: _signUp),
             ],
           ),
         ),
@@ -624,178 +514,133 @@ class _AuthScreenState extends State<AuthScreen>
     );
   }
 
-  // ── Gradient CTA button ───────────────────────────────────────────────────
+  // ── Bouton CTA ─────────────────────────────────────────────────────────
   Widget _buildCTAButton({
     required String label,
     required Future<void> Function() onTap,
   }) {
-    return GestureDetector(
-      onTapDown: (_) => setState(() => _btnPressed = true),
-      onTapUp: (_) async {
-        setState(() => _btnPressed = false);
-        if (!_loading) await onTap();
-      },
-      onTapCancel: () => setState(() => _btnPressed = false),
-      child: AnimatedScale(
-        scale: _btnPressed ? 0.96 : 1.0,
-        duration: const Duration(milliseconds: 140),
-        curve: Curves.easeOut,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 140),
-          width: double.infinity,
-          height: 52,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(26),
-            color: _loading
-                ? _kGreenDim.withValues(alpha: 0.60)
-                : _kGreen,
-            boxShadow: (_btnPressed || _loading)
-                ? []
-                : [
-                    BoxShadow(
-                      color: _kGreen.withValues(alpha: 0.40),
-                      blurRadius: 20,
-                      offset: const Offset(0, 6),
-                    ),
-                  ],
+    return SizedBox(
+      width: double.infinity,
+      height: 52,
+      child: ElevatedButton(
+        onPressed: _loading ? null : onTap,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: _kSkyDeep,
+          foregroundColor: Colors.white,
+          disabledBackgroundColor: _kSky.withOpacity(0.45),
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
           ),
-          child: Center(
-            child: _loading
-                ? const SizedBox(
-                    height: 22,
-                    width: 22,
-                    child: CircularProgressIndicator(
-                      color: Colors.white,
-                      strokeWidth: 2.4,
-                    ),
-                  )
-                : Text(
-                    label,
-                    style: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
-                      color: _kNavy,
-                      letterSpacing: 0.4,
-                    ),
-                  ),
-          ),
+        ).copyWith(
+          elevation: WidgetStateProperty.resolveWith(
+              (s) => s.contains(WidgetState.pressed) ? 0 : 4),
+          shadowColor: WidgetStateProperty.all(_kSky.withOpacity(0.28)),
         ),
+        child: _loading
+            ? const SizedBox(
+                height: 20,
+                width: 20,
+                child: CircularProgressIndicator(
+                  color: Colors.white,
+                  strokeWidth: 2.2,
+                ),
+              )
+            : Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(label,
+                      style: const TextStyle(
+                          fontSize: 15, fontWeight: FontWeight.w700)),
+                  const SizedBox(width: 8),
+                  const Icon(Icons.arrow_forward_rounded, size: 17),
+                ],
+              ),
       ),
     );
   }
 
-  // ── OR divider ────────────────────────────────────────────────────────────
+  // ── Séparateur OU ─────────────────────────────────────────────────────
   Widget _buildOrDivider() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 40),
       child: Row(
         children: [
           Expanded(
-            child: Container(
-              height: 0.5,
-              color: Colors.white.withValues(alpha: 0.12),
-            ),
-          ),
+              child: Divider(
+                  color: _kTextMid.withOpacity(0.15), thickness: 1)),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 14),
-            child: Text(
-              'ou',
-              style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.35),
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
+            child: Text('ou',
+                style: TextStyle(
+                    color: _kTextMid.withOpacity(0.5), fontSize: 12.5)),
           ),
           Expanded(
-            child: Container(
-              height: 0.5,
-              color: Colors.white.withValues(alpha: 0.12),
-            ),
-          ),
+              child: Divider(
+                  color: _kTextMid.withOpacity(0.15), thickness: 1)),
         ],
       ),
     );
   }
 
-  // ── Google button ─────────────────────────────────────────────────────────
+  // ── Bouton Google ─────────────────────────────────────────────────────
   Widget _buildGoogleButton() {
-    return GestureDetector(
-      onTap: () {
-        // TODO: Google Sign-In
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: const Text('Google Sign-In — bientôt disponible'),
-          backgroundColor: _kDeepBlue,
-          behavior: SnackBarBehavior.floating,
+    return SizedBox(
+      width: double.infinity,
+      height: 52,
+      child: OutlinedButton(
+        onPressed: () =>
+            _showSnack('Google Sign-In bientôt disponible 🚀', success: true),
+        style: OutlinedButton.styleFrom(
+          foregroundColor: _kTextDark,
+          side: BorderSide(color: _kTextMid.withOpacity(0.22), width: 1.2),
           shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12)),
-        ));
-      },
-      child: Container(
-        width: double.infinity,
-        height: 50,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(25),
-          color: Colors.white.withValues(alpha: 0.06),
-          border: Border.all(
-            color: Colors.white.withValues(alpha: 0.12),
-          ),
+              borderRadius: BorderRadius.circular(16)),
+          backgroundColor: Colors.white,
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // Google "G" icon using Material
             Container(
               width: 22,
               height: 22,
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: const Color(0xFF4285F4),
                 borderRadius: BorderRadius.circular(4),
               ),
               child: const Center(
-                child: Text(
-                  'G',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                    color: Color(0xFF4285F4),
-                  ),
-                ),
+                child: Text('G',
+                    style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.white)),
               ),
             ),
             const SizedBox(width: 12),
-            Text(
-              'Continuer avec Google',
-              style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.70),
-                fontSize: 13.5,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
+            Text('Continuer avec Google',
+                style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: _kTextDark.withOpacity(0.70))),
           ],
         ),
       ),
     );
   }
 
-  // ── Footer ────────────────────────────────────────────────────────────────
+  // ── Footer ────────────────────────────────────────────────────────────
   Widget _buildFooter() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Icon(
-          Icons.flight_rounded,
-          size: 12,
-          color: Colors.white.withValues(alpha: 0.20),
-        ),
+        Icon(Icons.flight_rounded, size: 12, color: _kSky.withOpacity(0.5)),
         const SizedBox(width: 6),
         Text(
-          'Discover the world with NexTrip',
+          'Explorez le monde avec NexTrip',
           style: TextStyle(
-            color: Colors.white.withValues(alpha: 0.20),
-            fontSize: 11,
-            letterSpacing: 0.3,
-          ),
+              color: _kTextMid.withOpacity(0.4),
+              fontSize: 11.5,
+              letterSpacing: 0.2),
         ),
       ],
     );

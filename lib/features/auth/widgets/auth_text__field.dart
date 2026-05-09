@@ -1,5 +1,13 @@
 import 'package:flutter/material.dart';
 
+// ── Palette light ──────────────────────────────────────────────
+const _kSky      = Color(0xFF4DB6E8);
+const _kSkyDeep  = Color(0xFF1A7EC8);
+const _kTextDark = Color(0xFF0A192F);
+const _kGrey     = Color(0xFF8AA3B8);
+const _kBgField  = Color(0xFFF0F7FD);
+// ──────────────────────────────────────────────────────────────
+
 class AuthTextField extends StatefulWidget {
   final String label;
   final String hint;
@@ -22,24 +30,32 @@ class AuthTextField extends StatefulWidget {
   State<AuthTextField> createState() => _AuthTextFieldState();
 }
 
-class _AuthTextFieldState extends State<AuthTextField> {
-  bool _obscure = true;
-  bool _isFocused = false;
-  final FocusNode _focusNode = FocusNode();
-
-  // Palette
-  static const Color _accentGreen = Color(0xFFCBF266);
+class _AuthTextFieldState extends State<AuthTextField>
+    with SingleTickerProviderStateMixin {
+  bool _obscure  = true;
+  bool _focused  = false;
+  late final AnimationController _animCtrl;
+  late final Animation<double> _borderAnim;
+  late final FocusNode _focusNode;
 
   @override
   void initState() {
     super.initState();
-    _focusNode.addListener(() {
-      setState(() => _isFocused = _focusNode.hasFocus);
-    });
+    _animCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 220),
+    );
+    _borderAnim = CurvedAnimation(parent: _animCtrl, curve: Curves.easeOut);
+    _focusNode = FocusNode()
+      ..addListener(() {
+        setState(() => _focused = _focusNode.hasFocus);
+        _focusNode.hasFocus ? _animCtrl.forward() : _animCtrl.reverse();
+      });
   }
 
   @override
   void dispose() {
+    _animCtrl.dispose();
     _focusNode.dispose();
     super.dispose();
   }
@@ -53,128 +69,97 @@ class _AuthTextFieldState extends State<AuthTextField> {
         AnimatedDefaultTextStyle(
           duration: const Duration(milliseconds: 200),
           style: TextStyle(
-            fontSize: 12,
+            fontSize: 13,
             fontWeight: FontWeight.w600,
-            letterSpacing: 0.8,
-            color: _isFocused
-                ? _accentGreen
-                : Colors.white.withValues(alpha: 0.55),
+            color: _focused ? _kSkyDeep : _kTextDark.withOpacity(0.55),
+            letterSpacing: 0.2,
           ),
-          child: Text(widget.label.toUpperCase()),
+          child: Text(widget.label),
         ),
         const SizedBox(height: 8),
 
-        // Input with animated glow
-        AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: _isFocused
-                ? [
-                    BoxShadow(
-                      color: _accentGreen.withValues(alpha: 0.18),
-                      blurRadius: 16,
-                      spreadRadius: 0,
-                    ),
-                    BoxShadow(
-                      color: _accentGreen.withValues(alpha: 0.08),
-                      blurRadius: 30,
-                      spreadRadius: 2,
-                    ),
-                  ]
-                : [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.20),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-          ),
-          child: TextFormField(
-            controller: widget.controller,
-            focusNode: _focusNode,
-            obscureText: widget.isPassword && _obscure,
-            validator: widget.validator,
-            // ── PURE WHITE text — fully visible ──
-            style: const TextStyle(
-              fontSize: 15,
-              color: Colors.white,
-              fontWeight: FontWeight.w500,
-              letterSpacing: 0.3,
-            ),
-            cursorColor: _accentGreen,
-            cursorWidth: 2,
-            decoration: InputDecoration(
-              hintText: widget.hint,
-              hintStyle: TextStyle(
-                color: Colors.white.withValues(alpha: 0.30),
-                fontSize: 14,
-                fontWeight: FontWeight.w400,
+        // Champ de saisie
+        AnimatedBuilder(
+          animation: _borderAnim,
+          builder: (_, __) {
+            return Container(
+              decoration: BoxDecoration(
+                color: _kBgField,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(
+                  color: Color.lerp(
+                    Colors.transparent,
+                    _kSky,
+                    _borderAnim.value,
+                  )!,
+                  width: 1.8,
+                ),
+                boxShadow: _focused
+                    ? [
+                        BoxShadow(
+                          color: _kSky.withOpacity(0.12),
+                          blurRadius: 12,
+                          offset: const Offset(0, 4),
+                        ),
+                      ]
+                    : [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.04),
+                          blurRadius: 6,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
               ),
-              prefixIcon: Padding(
-                padding: const EdgeInsets.only(left: 4),
-                child: Icon(
-                  widget.icon,
-                  color: _isFocused
-                      ? _accentGreen.withValues(alpha: 0.90)
-                      : Colors.white.withValues(alpha: 0.40),
-                  size: 19,
+              child: TextFormField(
+                controller: widget.controller,
+                focusNode: _focusNode,
+                obscureText: widget.isPassword && _obscure,
+                validator: widget.validator,
+                style: const TextStyle(
+                  color: _kTextDark,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w500,
+                ),
+                cursorColor: _kSky,
+                decoration: InputDecoration(
+                  hintText: widget.hint,
+                  hintStyle: TextStyle(
+                    color: _kGrey.withOpacity(0.7),
+                    fontSize: 14,
+                    fontWeight: FontWeight.w400,
+                  ),
+                  prefixIcon: Icon(
+                    widget.icon,
+                    color: _focused ? _kSky : _kGrey,
+                    size: 20,
+                  ),
+                  suffixIcon: widget.isPassword
+                      ? GestureDetector(
+                          onTap: () => setState(() => _obscure = !_obscure),
+                          child: Icon(
+                            _obscure
+                                ? Icons.visibility_off_outlined
+                                : Icons.visibility_outlined,
+                            color: _focused ? _kSky : _kGrey,
+                            size: 20,
+                          ),
+                        )
+                      : null,
+                  filled: false,
+                  border: InputBorder.none,
+                  enabledBorder: InputBorder.none,
+                  focusedBorder: InputBorder.none,
+                  errorBorder: InputBorder.none,
+                  contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16, vertical: 16),
+                  errorStyle: const TextStyle(
+                    color: Color(0xFFE05C5C),
+                    fontSize: 11.5,
+                  ),
                 ),
               ),
-              suffixIcon: widget.isPassword
-                  ? IconButton(
-                      icon: Icon(
-                        _obscure
-                            ? Icons.visibility_off_outlined
-                            : Icons.visibility_outlined,
-                        color: _isFocused
-                            ? _accentGreen.withValues(alpha: 0.80)
-                            : Colors.white.withValues(alpha: 0.35),
-                        size: 19,
-                      ),
-                      onPressed: () =>
-                          setState(() => _obscure = !_obscure),
-                    )
-                  : null,
-              filled: true,
-              fillColor: _isFocused
-                  ? Colors.white.withValues(alpha: 0.10)
-                  : Colors.white.withValues(alpha: 0.06),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(16),
-                borderSide: BorderSide(
-                    color: Colors.white.withValues(alpha: 0.12)),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(16),
-                borderSide: BorderSide(
-                    color: Colors.white.withValues(alpha: 0.12)),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(16),
-                borderSide: BorderSide(
-                  color: _accentGreen.withValues(alpha: 0.70),
-                  width: 1.4,
-                ),
-              ),
-              errorBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(16),
-                borderSide: const BorderSide(
-                    color: Color(0xFFFF6B6B), width: 1),
-              ),
-              focusedErrorBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(16),
-                borderSide: const BorderSide(
-                    color: Color(0xFFFF6B6B), width: 1.4),
-              ),
-              errorStyle: const TextStyle(
-                color: Color(0xFFFF6B6B),
-                fontSize: 11,
-              ),
-              contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 18, vertical: 17),
-            ),
-          ),
+            );
+          },
         ),
       ],
     );

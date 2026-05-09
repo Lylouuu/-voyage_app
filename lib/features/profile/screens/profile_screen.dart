@@ -130,19 +130,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.darkNavy,
+      backgroundColor: const Color(0xFFF4F9FF),
       bottomNavigationBar: _buildBottomNav(),
       body: Stack(
         children: [
-          // Background Gradient (Soft and dark)
+          // Background clair
           Container(
             decoration: const BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
                 colors: [
-                  Color(0xFF0F1B2D),
-                  Color(0xFF0A1628),
+                  Color(0xFFF4F9FF),
+                  Color(0xFFEBF5FB),
                 ],
               ),
             ),
@@ -151,7 +151,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           SafeArea(
             child: _loading
                 ? const Center(
-                    child: CircularProgressIndicator(color: AppTheme.limeGreen),
+                    child: CircularProgressIndicator(color: Color(0xFF4DB6E8)),
                   )
                 : SingleChildScrollView(
                     physics: const BouncingScrollPhysics(),
@@ -199,10 +199,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
               child: Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.05),
+                  color: Colors.white,
                   borderRadius: BorderRadius.circular(14),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
                 ),
-                child: Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white.withOpacity(0.9), size: 18),
+                child: const Icon(Icons.arrow_back_ios_new_rounded, color: Color(0xFF4A6580), size: 18),
               ),
             ),
           ),
@@ -213,14 +220,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
             height: 80,
             decoration: BoxDecoration(
               gradient: const LinearGradient(
-                colors: [AppTheme.limeGreen, Color(0xFF6EDC7B)],
+                colors: [Color(0xFF4DB6E8), Color(0xFF1A7EC8)],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
               shape: BoxShape.circle,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.2),
+                  color: const Color(0xFF4DB6E8).withOpacity(0.3),
                   blurRadius: 10,
                   offset: const Offset(0, 4),
                 ),
@@ -232,7 +239,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 style: const TextStyle(
                   fontSize: 32,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF0F1B2D),
+                  color: Colors.white,
                 ),
               ),
             ),
@@ -243,16 +250,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
             style: const TextStyle(
               fontSize: 24,
               fontWeight: FontWeight.bold,
-              color: Colors.white,
+              color: Color(0xFF0A192F),
               letterSpacing: -0.5,
             ),
           ),
           const SizedBox(height: 4),
           Text(
             _user?['email'] ?? 'email@introuvable.com',
-            style: TextStyle(
+            style: const TextStyle(
               fontSize: 14,
-              color: Colors.white.withOpacity(0.6),
+              color: Color(0xFF4A6580),
             ),
           ),
           const SizedBox(height: 28),
@@ -279,15 +286,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
           style: const TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.bold,
-            color: Colors.white,
+            color: Color(0xFF0A192F),
           ),
         ),
         const SizedBox(height: 4),
         Text(
           label,
-          style: TextStyle(
+          style: const TextStyle(
             fontSize: 12,
-            color: Colors.white.withOpacity(0.5),
+            color: Color(0xFF4A6580),
             fontWeight: FontWeight.w500,
           ),
         ),
@@ -307,14 +314,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
-            color: Colors.white,
+            color: Color(0xFF0A192F),
           ),
         ),
         const SizedBox(height: 16),
         Container(
           decoration: BoxDecoration(
-            color: const Color(0xFF162544),
+            color: Colors.white,
             borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.03),
+                blurRadius: 10,
+              ),
+            ],
           ),
           child: Column(
             children: [
@@ -331,9 +344,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
+                      const Text(
                         'Centres d\'intérêt',
-                        style: TextStyle(fontSize: 14, color: Colors.white.withOpacity(0.6)),
+                        style: TextStyle(fontSize: 14, color: Color(0xFF4A6580)),
                       ),
                       const SizedBox(height: 12),
                       Wrap(
@@ -344,14 +357,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               (i) => Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                                 decoration: BoxDecoration(
-                                  color: AppTheme.limeGreen.withOpacity(0.1),
+                                  color: const Color(0xFF4DB6E8).withOpacity(0.1),
                                   borderRadius: BorderRadius.circular(16),
                                 ),
                                 child: Text(
                                   i.toString(),
                                   style: const TextStyle(
                                     fontSize: 13,
-                                    color: AppTheme.limeGreen,
+                                    color: Color(0xFF4DB6E8),
                                     fontWeight: FontWeight.w500,
                                   ),
                                 ),
@@ -392,7 +405,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           const SizedBox(width: 14),
           Text(
             label,
-            style: TextStyle(fontSize: 15, color: Colors.white.withOpacity(0.8), fontWeight: FontWeight.w500),
+            style: const TextStyle(fontSize: 15, color: Color(0xFF4A6580), fontWeight: FontWeight.w500),
           ),
           const Spacer(),
           Text(
@@ -400,7 +413,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             style: const TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.bold,
-              color: AppTheme.limeGreen,
+              color: Color(0xFF4DB6E8),
             ),
           ),
         ],
@@ -412,7 +425,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Container(
       height: 1,
       margin: const EdgeInsets.symmetric(horizontal: 16),
-      color: Colors.white.withOpacity(0.05),
+      color: const Color(0xFFEBF5FB),
     );
   }
 
@@ -428,7 +441,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
-            color: Colors.white,
+            color: Color(0xFF0A192F),
           ),
         ),
         const SizedBox(height: 16),
@@ -563,11 +576,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Padding(
-          padding: const EdgeInsets.only(left: 16, bottom: 8, top: 12),
+        const Padding(
+          padding: EdgeInsets.only(left: 16, bottom: 8, top: 12),
           child: Text(
             'Sécurité',
-            style: TextStyle(fontSize: 13, color: Colors.white.withOpacity(0.5), fontWeight: FontWeight.w600),
+            style: TextStyle(fontSize: 13, color: Color(0xFF4A6580), fontWeight: FontWeight.w600),
           ),
         ),
         _InteractiveSettingCard(
@@ -665,10 +678,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
           gradient: const LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [Color(0xFF7C3AED), Color(0xFF9F5AFF), Color(0xFFB47AFF)],
+            colors: [Color(0xFF4DB6E8), Color(0xFF1A7EC8)],
           ),
           boxShadow: [
-            BoxShadow(color: const Color(0xFF7C3AED).withOpacity(0.4), blurRadius: 16, offset: const Offset(0, 4)),
+            BoxShadow(color: const Color(0xFF4DB6E8).withOpacity(0.4), blurRadius: 16, offset: const Offset(0, 4)),
           ],
         ),
         child: const Center(
@@ -705,7 +718,7 @@ class _InteractiveSettingCardState extends State<_InteractiveSettingCard> {
 
   @override
   Widget build(BuildContext context) {
-    final color = widget.isDanger ? Colors.redAccent : Colors.white;
+    final color = widget.isDanger ? Colors.redAccent : const Color(0xFF0A192F);
 
     return GestureDetector(
       onTapDown: (_) => setState(() => _isPressed = true),
@@ -718,26 +731,32 @@ class _InteractiveSettingCardState extends State<_InteractiveSettingCard> {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
           decoration: BoxDecoration(
-            color: const Color(0xFF162544),
+            color: Colors.white,
             borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.03),
+                blurRadius: 10,
+              ),
+            ],
             border: Border.all(
-              color: _isPressed ? Colors.white.withOpacity(0.1) : Colors.transparent,
+              color: _isPressed ? const Color(0xFF4DB6E8).withOpacity(0.3) : Colors.transparent,
             ),
           ),
           child: Row(
             children: [
-              Icon(widget.icon, color: color.withOpacity(0.8), size: 22),
+              Icon(widget.icon, color: widget.isDanger ? color : const Color(0xFF4A6580), size: 22),
               const SizedBox(width: 16),
               Text(
                 widget.label,
                 style: TextStyle(
                   fontSize: 16,
                   color: color,
-                  fontWeight: FontWeight.w500,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
               const Spacer(),
-              Icon(Icons.chevron_right_rounded, color: color.withOpacity(0.3), size: 20),
+              Icon(Icons.chevron_right_rounded, color: const Color(0xFF4A6580).withOpacity(0.5), size: 20),
             ],
           ),
         ),
@@ -775,14 +794,14 @@ class _InteractiveButtonState extends State<_InteractiveButton> {
           width: double.infinity,
           padding: const EdgeInsets.symmetric(vertical: 16),
           decoration: BoxDecoration(
-            color: AppTheme.limeGreen.withOpacity(0.9), // Soft green, no heavy glow
+            color: const Color(0xFF4DB6E8),
             borderRadius: BorderRadius.circular(14),
           ),
           child: Center(
             child: Text(
               widget.label,
               style: const TextStyle(
-                color: Color(0xFF0F1B2D),
+                color: Colors.white,
                 fontSize: 16,
                 fontWeight: FontWeight.w700,
               ),

@@ -2,7 +2,6 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:voyage_app/core/theme/app_theme.dart';
-import 'package:voyage_app/features/home/screens/home_screen.dart';
 import 'package:voyage_app/main.dart';
 
 class OnboardingScreen extends StatefulWidget {
@@ -17,16 +16,16 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   final _supabase = Supabase.instance.client;
   bool _loading = false;
 
-  // ── Preferences data ──────────────────────────────────────
+  // ── Données de préférences ─────────────────────────────────
   String _budget = '';
   String _typeVoyage = '';
   String _dureeSejour = '';
   final List<String> _centresInteret = [];
 
   final _budgets = [
-    {'label': 'Économique', 'emoji': '🪙', 'sub': 'Moins de 800€'},
-    {'label': 'Moyen', 'emoji': '💳', 'sub': '800€ - 2000€'},
-    {'label': 'Élevé', 'emoji': '💎', 'sub': 'Plus de 2000€'},
+    {'label': 'Économique', 'emoji': '🪙', 'sub': 'Moins de 800 €'},
+    {'label': 'Moyen', 'emoji': '💳', 'sub': '800 € – 2 000 €'},
+    {'label': 'Élevé', 'emoji': '💎', 'sub': 'Plus de 2 000 €'},
   ];
 
   final _types = [
@@ -39,7 +38,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   final _durees = [
     {'label': 'Court', 'emoji': '⚡', 'sub': '1 à 3 jours'},
     {'label': 'Moyen', 'emoji': '🗓️', 'sub': '4 à 7 jours'},
-    {'label': 'Long', 'emoji': '🌍', 'sub': 'Plus d\'une semaine'},
+    {'label': 'Long', 'emoji': '🌍', 'sub': "Plus d'une semaine"},
   ];
 
   final _interets = [
@@ -52,6 +51,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     {'label': 'Détente', 'emoji': '🧘'},
     {'label': 'Romantique', 'emoji': '💑'},
   ];
+
+  // ── Couleurs d'accent par section (palette bleu ciel) ──────
+  static const Color _accentBudget  = Color(0xFF4DB6E8); // Bleu ciel vif
+  static const Color _accentType    = Color(0xFF00B4D8); // Cyan azur
+  static const Color _accentDuree   = Color(0xFF7EC8E3); // Bleu ciel doux
+  static const Color _accentInteret = Color(0xFF4DB6E8); // Bleu ciel vif
 
   @override
   void initState() {
@@ -71,8 +76,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       final prefs = rows.isNotEmpty ? rows.first : null;
       if (prefs != null && mounted) {
         setState(() {
-          _budget = prefs['budget'] ?? '';
-          _typeVoyage = prefs['type_voyage'] ?? '';
+          _budget      = prefs['budget']       ?? '';
+          _typeVoyage  = prefs['type_voyage']  ?? '';
           _dureeSejour = prefs['duree_sejour'] ?? '';
           final ci = prefs['centres_interet'];
           if (ci is List) {
@@ -124,8 +129,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       await _supabase
           .from('utilisateurs')
           .update({
-            'budget': _budget,
-            'type_voyage': _typeVoyage,
+            'budget':       _budget,
+            'type_voyage':  _typeVoyage,
             'duree_sejour': _dureeSejour,
           })
           .eq('id', user.id);
@@ -134,7 +139,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         if (widget.isEditing) {
           Navigator.pop(context);
         } else {
-          // Restart AuthWrapper to re-evaluate the user profile (budget is now filled)
           Navigator.pushAndRemoveUntil(
             context,
             MaterialPageRoute(builder: (_) => const AuthWrapper()),
@@ -158,32 +162,32 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     }
   }
 
-  // ── UI BUILD ─────────────────────────────────────────────
+  // ── UI BUILD ──────────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.darkNavy,
+      backgroundColor: const Color(0xFFF4F9FF),
       body: Stack(
         children: [
-          // ── Ambient background gradient
+          // ── Dégradé d'ambiance Light Premium
           Container(
             decoration: const BoxDecoration(
               gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [Color(0xFF0F1B2D), Color(0xFF0A1628)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Color(0xFFF4F9FF), // Bleu ciel très clair
+                  Color(0xFFEBF5FB), // Un peu plus dense
+                ],
               ),
             ),
           ),
 
-          // ── Content
+          // ── Contenu principal
           SafeArea(
             child: Column(
               children: [
-                // ── Header
                 _buildHeader(),
-
-                // ── Scrollable sections
                 Expanded(
                   child: SingleChildScrollView(
                     physics: const BouncingScrollPhysics(),
@@ -191,11 +195,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     child: Column(
                       children: [
                         _buildBudgetSection(),
-                        const SizedBox(height: 24),
+                        const SizedBox(height: 20),
                         _buildTypeSection(),
-                        const SizedBox(height: 24),
+                        const SizedBox(height: 20),
                         _buildDureeSection(),
-                        const SizedBox(height: 24),
+                        const SizedBox(height: 20),
                         _buildInteretsSection(),
                       ],
                     ),
@@ -205,7 +209,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             ),
           ),
 
-          // ── Floating CTA
+          // ── Bouton flottant CTA
           Positioned(
             bottom: 0,
             left: 0,
@@ -217,7 +221,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     );
   }
 
-  // ── HEADER ──────────────────────────────────────────────────
+  // ── EN-TÊTE ────────────────────────────────────────────────
   Widget _buildHeader() {
     return Padding(
       padding: const EdgeInsets.fromLTRB(24, 20, 24, 16),
@@ -229,11 +233,17 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               child: Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.05),
+                  color: Colors.white,
                   borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: Colors.white.withOpacity(0.1)),
+                  boxShadow: [
+                    BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4)),
+                  ],
                 ),
-                child: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 18),
+                child: const Icon(
+                  Icons.arrow_back_ios_new_rounded,
+                  color: Color(0xFF4A6580),
+                  size: 18,
+                ),
               ),
             ),
           if (widget.isEditing) const SizedBox(width: 16),
@@ -241,24 +251,28 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  widget.isEditing ? 'Mes Préférences' : 'Bienvenue ! ✈️',
-                  style: const TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.w900,
-                    color: Colors.white,
-                    letterSpacing: -0.5,
-                  ),
+                Row(
+                  children: [
+                    Text(
+                      widget.isEditing ? 'Mes Préférences' : 'Bienvenue ! ✈️',
+                      style: const TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.w900,
+                        color: Color(0xFF0A192F),
+                        letterSpacing: -0.5,
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 4),
                 Text(
                   widget.isEditing
                       ? 'Personnalisez votre expérience de voyage'
                       : 'Dites-nous ce que vous aimez',
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontSize: 14,
-                    color: Colors.white.withOpacity(0.5),
-                    fontWeight: FontWeight.w500,
+                    color: Color(0xFF4A6580),
+                    fontWeight: FontWeight.w400,
                   ),
                 ),
               ],
@@ -269,7 +283,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     );
   }
 
-  // ── SECTION WRAPPER ───────────────────────────────────────
+  // ── CARTE DE SECTION ──────────────────────────────────────
   Widget _buildSectionCard({
     required String title,
     required IconData icon,
@@ -279,24 +293,33 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     return ClipRRect(
       borderRadius: BorderRadius.circular(24),
       child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
         child: Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.04),
+            color: Colors.white,
             borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: Colors.white.withOpacity(0.06)),
+            border: Border.all(
+              color: accentColor.withOpacity(0.10),
+              width: 1,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.04),
+                blurRadius: 15,
+                offset: const Offset(0, 5),
+              ),
+            ],
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Section title row
               Row(
                 children: [
                   Container(
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      color: accentColor.withOpacity(0.15),
+                      color: accentColor.withOpacity(0.12),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Icon(icon, color: accentColor, size: 20),
@@ -307,7 +330,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                      color: Color(0xFF0A192F),
                       letterSpacing: -0.3,
                     ),
                   ),
@@ -322,24 +345,26 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     );
   }
 
-  // ── BUDGET SECTION ────────────────────────────────────────
+  // ── SECTION BUDGET ────────────────────────────────────────
   Widget _buildBudgetSection() {
     return _buildSectionCard(
       title: 'Budget',
       icon: Icons.account_balance_wallet_rounded,
-      accentColor: const Color(0xFFFFD97D),
+      accentColor: _accentBudget,
       child: Column(
         children: _budgets.asMap().entries.map((entry) {
           final b = entry.value;
           final selected = _budget == b['label'];
           return Padding(
-            padding: EdgeInsets.only(bottom: entry.key < _budgets.length - 1 ? 10 : 0),
+            padding: EdgeInsets.only(
+              bottom: entry.key < _budgets.length - 1 ? 10 : 0,
+            ),
             child: _PremiumOptionTile(
               emoji: b['emoji']!,
               label: b['label']!,
               subtitle: b['sub'],
               selected: selected,
-              accentColor: const Color(0xFFFFD97D),
+              accentColor: _accentBudget,
               onTap: () => setState(() => _budget = b['label']!),
             ),
           );
@@ -348,12 +373,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     );
   }
 
-  // ── TYPE SECTION ──────────────────────────────────────────
+  // ── SECTION TYPE DE VOYAGE ────────────────────────────────
   Widget _buildTypeSection() {
     return _buildSectionCard(
       title: 'Type de voyage',
       icon: Icons.flight_takeoff_rounded,
-      accentColor: const Color(0xFF00E5FF),
+      accentColor: _accentType,
       child: GridView.count(
         shrinkWrap: true,
         physics: const NeverScrollableScrollPhysics(),
@@ -366,20 +391,25 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           return GestureDetector(
             onTap: () => setState(() => _typeVoyage = t['label']!),
             child: AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
+              duration: const Duration(milliseconds: 220),
               decoration: BoxDecoration(
                 color: selected
-                    ? const Color(0xFF00E5FF).withOpacity(0.15)
+                    ? _accentType.withOpacity(0.14)
                     : Colors.white.withOpacity(0.03),
                 borderRadius: BorderRadius.circular(18),
                 border: Border.all(
                   color: selected
-                      ? const Color(0xFF00E5FF).withOpacity(0.6)
-                      : Colors.white.withOpacity(0.05),
+                      ? _accentType.withOpacity(0.55)
+                      : Colors.white.withOpacity(0.06),
                   width: 1.5,
                 ),
                 boxShadow: selected
-                    ? [BoxShadow(color: const Color(0xFF00E5FF).withOpacity(0.15), blurRadius: 12)]
+                    ? [
+                        BoxShadow(
+                          color: _accentType.withOpacity(0.18),
+                          blurRadius: 14,
+                        ),
+                      ]
                     : [],
               ),
               child: Column(
@@ -392,7 +422,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w700,
-                      color: selected ? const Color(0xFF00E5FF) : Colors.white.withOpacity(0.7),
+                      color: selected
+                          ? _accentType
+                          : Colors.white.withOpacity(0.7),
                     ),
                   ),
                 ],
@@ -404,24 +436,26 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     );
   }
 
-  // ── DURATION SECTION ──────────────────────────────────────
+  // ── SECTION DURÉE ─────────────────────────────────────────
   Widget _buildDureeSection() {
     return _buildSectionCard(
       title: 'Durée de séjour',
       icon: Icons.schedule_rounded,
-      accentColor: const Color(0xFF9080FF),
+      accentColor: _accentDuree,
       child: Column(
         children: _durees.asMap().entries.map((entry) {
           final d = entry.value;
           final selected = _dureeSejour == d['label'];
           return Padding(
-            padding: EdgeInsets.only(bottom: entry.key < _durees.length - 1 ? 10 : 0),
+            padding: EdgeInsets.only(
+              bottom: entry.key < _durees.length - 1 ? 10 : 0,
+            ),
             child: _PremiumOptionTile(
               emoji: d['emoji']!,
               label: d['label']!,
               subtitle: d['sub'],
               selected: selected,
-              accentColor: const Color(0xFF9080FF),
+              accentColor: _accentDuree,
               onTap: () => setState(() => _dureeSejour = d['label']!),
             ),
           );
@@ -430,12 +464,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     );
   }
 
-  // ── INTERESTS SECTION ─────────────────────────────────────
+  // ── SECTION CENTRES D'INTÉRÊT ─────────────────────────────
   Widget _buildInteretsSection() {
     return _buildSectionCard(
-      title: 'Centres d\'intérêt',
+      title: "Centres d'intérêt",
       icon: Icons.interests_rounded,
-      accentColor: AppTheme.limeGreen,
+      accentColor: _accentInteret,
       child: Wrap(
         spacing: 10,
         runSpacing: 10,
@@ -452,22 +486,32 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               });
             },
             child: AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              duration: const Duration(milliseconds: 220),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
               decoration: BoxDecoration(
                 color: selected
-                    ? AppTheme.limeGreen.withOpacity(0.15)
-                    : Colors.white.withOpacity(0.03),
+                    ? _accentInteret.withOpacity(0.14)
+                    : Colors.white,
                 borderRadius: BorderRadius.circular(50),
                 border: Border.all(
                   color: selected
-                      ? AppTheme.limeGreen.withOpacity(0.6)
-                      : Colors.white.withOpacity(0.06),
+                      ? _accentInteret.withOpacity(0.55)
+                      : const Color(0xFF4DB6E8).withOpacity(0.1),
                   width: 1.5,
                 ),
-                boxShadow: selected
-                    ? [BoxShadow(color: AppTheme.limeGreen.withOpacity(0.1), blurRadius: 10)]
-                    : [],
+                boxShadow: [
+                  if (!selected)
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.02),
+                      blurRadius: 5,
+                      offset: const Offset(0, 2),
+                    ),
+                  if (selected)
+                    BoxShadow(
+                      color: _accentInteret.withOpacity(0.12),
+                      blurRadius: 10,
+                    ),
+                ],
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
@@ -477,14 +521,20 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   Text(
                     i['label']!,
                     style: TextStyle(
-                      fontSize: 14,
+                      fontSize: 13,
                       fontWeight: FontWeight.w600,
-                      color: selected ? AppTheme.limeGreen : Colors.white.withOpacity(0.7),
+                      color: selected
+                          ? _accentInteret
+                          : const Color(0xFF4A6580),
                     ),
                   ),
                   if (selected) ...[
                     const SizedBox(width: 6),
-                    Icon(Icons.check_rounded, size: 16, color: AppTheme.limeGreen),
+                    Icon(
+                      Icons.check_rounded,
+                      size: 15,
+                      color: _accentInteret,
+                    ),
                   ],
                 ],
               ),
@@ -495,36 +545,46 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     );
   }
 
-  // ── FLOATING CTA ──────────────────────────────────────────
+  // ── BOUTON FLOTTANT CTA ───────────────────────────────────
   Widget _buildFloatingCTA() {
     return Container(
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 36),
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 36),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: [
-            AppTheme.darkNavy.withOpacity(0.0),
-            AppTheme.darkNavy.withOpacity(0.95),
-            AppTheme.darkNavy,
+            const Color(0xFFF4F9FF).withOpacity(0.0),
+            const Color(0xFFF4F9FF).withOpacity(0.94),
+            const Color(0xFFF4F9FF),
           ],
-          stops: const [0.0, 0.3, 1.0],
+          stops: const [0.0, 0.28, 1.0],
         ),
       ),
       child: GestureDetector(
         onTap: _canSave ? _savePreferences : null,
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
+          duration: const Duration(milliseconds: 250),
           width: double.infinity,
           height: 58,
           decoration: BoxDecoration(
             gradient: _canSave
-                ? const LinearGradient(colors: [Color(0xFF00C9B1), Color(0xFF00E5FF)])
+                ? const LinearGradient(
+                    colors: [Color(0xFF4DB6E8), Color(0xFF1A7EC8)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  )
                 : null,
-            color: _canSave ? null : Colors.white.withOpacity(0.05),
+            color: _canSave ? null : const Color(0xFFEBF5FB),
             borderRadius: BorderRadius.circular(18),
             boxShadow: _canSave
-                ? [BoxShadow(color: const Color(0xFF00C9B1).withOpacity(0.4), blurRadius: 16, offset: const Offset(0, 4))]
+                ? [
+                    BoxShadow(
+                      color: const Color(0xFF4DB6E8).withOpacity(0.38),
+                      blurRadius: 20,
+                      offset: const Offset(0, 6),
+                    ),
+                  ]
                 : [],
           ),
           child: Center(
@@ -532,16 +592,36 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 ? const SizedBox(
                     height: 22,
                     width: 22,
-                    child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5),
-                  )
-                : Text(
-                    widget.isEditing ? 'Enregistrer mes préférences' : '🌴  Commencer l\'aventure !',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: _canSave ? const Color(0xFF0F1B2D) : Colors.white.withOpacity(0.3),
-                      letterSpacing: 0.3,
+                    child: CircularProgressIndicator(
+                      color: Colors.white,
+                      strokeWidth: 2.5,
                     ),
+                  )
+                : Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        widget.isEditing
+                            ? 'Enregistrer mes préférences'
+                            : '🌴  Commencer l\'aventure !',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: _canSave
+                              ? Colors.white
+                              : const Color(0xFF4A6580).withOpacity(0.5),
+                          letterSpacing: 0.3,
+                        ),
+                      ),
+                      if (_canSave) ...[
+                        const SizedBox(width: 8),
+                        const Icon(
+                          Icons.arrow_forward_rounded,
+                          color: Colors.white,
+                          size: 18,
+                        ),
+                      ],
+                    ],
                   ),
           ),
         ),
@@ -550,9 +630,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 }
 
-// ─────────────────────────────────────────────────
-// PREMIUM OPTION TILE (Budget / Duration rows)
-// ─────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────
+// WIDGET : Tuile d'option premium (Budget / Durée)
+// ─────────────────────────────────────────────────────────────
 class _PremiumOptionTile extends StatelessWidget {
   final String emoji;
   final String label;
@@ -575,32 +655,39 @@ class _PremiumOptionTile extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
+        duration: const Duration(milliseconds: 220),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
           color: selected
-              ? accentColor.withOpacity(0.12)
-              : Colors.white.withOpacity(0.02),
+              ? accentColor.withOpacity(0.11)
+              : Colors.white,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: selected
-                ? accentColor.withOpacity(0.5)
-                : Colors.white.withOpacity(0.04),
+                ? accentColor.withOpacity(0.50)
+                : const Color(0xFF4DB6E8).withOpacity(0.1),
             width: 1.5,
           ),
-          boxShadow: selected
-              ? [BoxShadow(color: accentColor.withOpacity(0.1), blurRadius: 12)]
-              : [],
+          boxShadow: [
+            if (!selected)
+              BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 8, offset: const Offset(0, 2)),
+            if (selected)
+              BoxShadow(
+                color: accentColor.withOpacity(0.12),
+                blurRadius: 14,
+              ),
+          ],
         ),
         child: Row(
           children: [
+            // Icône emoji
             Container(
               width: 44,
               height: 44,
               decoration: BoxDecoration(
                 color: selected
-                    ? accentColor.withOpacity(0.2)
-                    : Colors.white.withOpacity(0.03),
+                    ? accentColor.withOpacity(0.18)
+                    : const Color(0xFFEBF5FB),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Center(
@@ -608,6 +695,7 @@ class _PremiumOptionTile extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 16),
+            // Label + sous-titre
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -615,9 +703,11 @@ class _PremiumOptionTile extends StatelessWidget {
                   Text(
                     label,
                     style: TextStyle(
-                      fontSize: 16,
+                      fontSize: 15,
                       fontWeight: FontWeight.bold,
-                      color: selected ? accentColor : Colors.white.withOpacity(0.9),
+                      color: selected
+                          ? accentColor
+                          : const Color(0xFF0A192F),
                     ),
                   ),
                   if (subtitle != null) ...[
@@ -626,24 +716,35 @@ class _PremiumOptionTile extends StatelessWidget {
                       subtitle!,
                       style: TextStyle(
                         fontSize: 12,
-                        color: selected ? accentColor.withOpacity(0.7) : Colors.white.withOpacity(0.4),
+                        color: selected
+                            ? accentColor.withOpacity(0.65)
+                            : const Color(0xFF4A6580),
                       ),
                     ),
                   ],
                 ],
               ),
             ),
+            // Indicateur sélectionné / non sélectionné
             AnimatedSwitcher(
               duration: const Duration(milliseconds: 200),
               child: selected
-                  ? Icon(Icons.check_circle_rounded, color: accentColor, size: 22, key: const ValueKey('check'))
+                  ? Icon(
+                      Icons.check_circle_rounded,
+                      color: accentColor,
+                      size: 22,
+                      key: const ValueKey('check'),
+                    )
                   : Container(
                       key: const ValueKey('circle'),
                       width: 22,
                       height: 22,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white.withOpacity(0.1), width: 1.5),
+                        border: Border.all(
+                          color: const Color(0xFF4DB6E8).withOpacity(0.3),
+                          width: 1.5,
+                        ),
                       ),
                     ),
             ),

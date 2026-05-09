@@ -92,20 +92,20 @@ class _MesVoyagesScreenState extends State<MesVoyagesScreen> with SingleTickerPr
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.darkNavy,
+      backgroundColor: const Color(0xFFF4F9FF),
       bottomNavigationBar: _buildBottomNav(),
       body: Stack(
         children: [
-          // Background Gradient
+          // Background Gradient clair
           Container(
             decoration: const BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
                 colors: [
-                  Color(0xFF0F1B2D),
-                  Color(0xFF0A1628),
-                  Color(0xFF0D1F3C),
+                  Color(0xFFF4F9FF),
+                  Color(0xFFEBF5FB),
+                  Color(0xFFF0F8FF),
                 ],
               ),
             ),
@@ -164,23 +164,23 @@ class _MesVoyagesScreenState extends State<MesVoyagesScreen> with SingleTickerPr
             children: [
               GestureDetector(
                 onTap: () => Navigator.pop(context),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(14),
-                  child: BackdropFilter(
-                    filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                    child: Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.08),
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: Colors.white.withOpacity(0.1)),
+                child: Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(14),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.05),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
                       ),
-                      child: Icon(
-                        Icons.arrow_back_ios_new_rounded,
-                        color: Colors.white.withOpacity(0.9),
-                        size: 18,
-                      ),
-                    ),
+                    ],
+                  ),
+                  child: const Icon(
+                    Icons.arrow_back_ios_new_rounded,
+                    color: Color(0xFF4A6580),
+                    size: 18,
                   ),
                 ),
               ),
@@ -192,14 +192,14 @@ class _MesVoyagesScreenState extends State<MesVoyagesScreen> with SingleTickerPr
             style: TextStyle(
               fontSize: 32,
               fontWeight: FontWeight.bold,
-              color: Colors.white,
+              color: Color(0xFF0A192F),
               letterSpacing: -0.5,
             ),
           ),
           const SizedBox(height: 4),
-          Text(
+          const Text(
             'Tous vos itinéraires et souvenirs',
-            style: TextStyle(fontSize: 14, color: Colors.white.withOpacity(0.5)),
+            style: TextStyle(fontSize: 14, color: Color(0xFF4A6580)),
           ),
           const SizedBox(height: 20),
           // Stats Row
@@ -208,7 +208,7 @@ class _MesVoyagesScreenState extends State<MesVoyagesScreen> with SingleTickerPr
             physics: const BouncingScrollPhysics(),
             child: Row(
               children: [
-                _buildStatBadge('${_voyages.length}', 'Total', AppTheme.limeGreen),
+                _buildStatBadge('${_voyages.length}', 'Total', const Color(0xFF4DB6E8)),
                 const SizedBox(width: 10),
                 _buildStatBadge(
                   '${_voyages.where((v) => v['statut'] == 'en cours').length}',
@@ -219,7 +219,7 @@ class _MesVoyagesScreenState extends State<MesVoyagesScreen> with SingleTickerPr
                 _buildStatBadge(
                   '${_voyages.where((v) => v['statut'] == 'effectué').length}',
                   'Effectués',
-                  Colors.white70,
+                  const Color(0xFF4DB6E8),
                 ),
               ],
             ),
@@ -233,9 +233,14 @@ class _MesVoyagesScreenState extends State<MesVoyagesScreen> with SingleTickerPr
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.06),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white.withOpacity(0.1)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 10,
+          ),
+        ],
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -251,7 +256,7 @@ class _MesVoyagesScreenState extends State<MesVoyagesScreen> with SingleTickerPr
           const SizedBox(width: 6),
           Text(
             label,
-            style: TextStyle(fontSize: 13, color: Colors.white.withOpacity(0.7)),
+            style: const TextStyle(fontSize: 13, color: Color(0xFF4A6580)),
           ),
         ],
       ),
@@ -263,11 +268,11 @@ class _MesVoyagesScreenState extends State<MesVoyagesScreen> with SingleTickerPr
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.luggage_outlined, size: 64, color: Colors.white.withOpacity(0.2)),
+          Icon(Icons.luggage_outlined, size: 64, color: const Color(0xFF4DB6E8).withOpacity(0.4)),
           const SizedBox(height: 16),
-          const Text('Aucun voyage trouvé', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+          const Text('Aucun voyage trouvé', style: TextStyle(color: Color(0xFF0A192F), fontSize: 18, fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
-          Text('Vos futurs voyages apparaîtront ici', style: TextStyle(color: Colors.white.withOpacity(0.5))),
+          const Text('Vos futurs voyages apparaîtront ici', style: TextStyle(color: Color(0xFF4A6580))),
         ],
       ),
     );
@@ -280,10 +285,17 @@ class _MesVoyagesScreenState extends State<MesVoyagesScreen> with SingleTickerPr
     return Container(
       padding: EdgeInsets.only(bottom: MediaQuery.of(context).padding.bottom + 8, top: 12),
       decoration: BoxDecoration(
-        color: const Color(0xFF0A1628), // Same as bottom of background gradient
+        color: Colors.white,
         border: Border(
-          top: BorderSide(color: Colors.white.withOpacity(0.05)),
+          top: BorderSide(color: const Color(0xFF4DB6E8).withOpacity(0.10)),
         ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 20,
+            offset: const Offset(0, -4),
+          ),
+        ],
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -344,29 +356,31 @@ class _MesVoyagesScreenState extends State<MesVoyagesScreen> with SingleTickerPr
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 300),
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: isActive ? AppTheme.limeGreen : Colors.transparent,
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: Icon(
-                isActive ? activeIcon : icon,
-                color: isActive ? const Color(0xFF0F1B2D) : Colors.white.withOpacity(0.4),
-                size: 22,
-              ),
+            Icon(
+              isActive ? activeIcon : icon,
+              color: isActive ? const Color(0xFF4DB6E8) : const Color(0xFF4A6580).withOpacity(0.45),
+              size: 24,
             ),
             const SizedBox(height: 4),
             Text(
               label,
               style: TextStyle(
-                color: isActive ? AppTheme.limeGreen : Colors.white.withOpacity(0.35),
+                color: isActive ? const Color(0xFF4DB6E8) : const Color(0xFF4A6580).withOpacity(0.45),
                 fontSize: 10,
-                fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
+                fontWeight: isActive ? FontWeight.w700 : FontWeight.w400,
               ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 3),
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 300),
+              width: isActive ? 4 : 0,
+              height: isActive ? 4 : 0,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: isActive ? const Color(0xFF4DB6E8) : Colors.transparent,
+              ),
             ),
           ],
         ),
@@ -387,18 +401,10 @@ class _MesVoyagesScreenState extends State<MesVoyagesScreen> with SingleTickerPr
         height: 56,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          gradient: const LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Color(0xFF7C3AED),
-              Color(0xFF9F5AFF),
-              Color(0xFFB47AFF),
-            ],
-          ),
+          gradient: const LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [Color(0xFF4DB6E8), Color(0xFF1A7EC8)]),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFF7C3AED).withOpacity(0.4),
+              color: const Color(0xFF4DB6E8).withOpacity(0.4),
               blurRadius: 16,
               offset: const Offset(0, 4),
             ),
@@ -652,11 +658,11 @@ class _VoyageCardState extends State<_VoyageCard> {
                               child: Container(
                                 padding: const EdgeInsets.symmetric(vertical: 12),
                                 decoration: BoxDecoration(
-                                  color: AppTheme.limeGreen,
+                                  color: const Color(0xFF4DB6E8),
                                   borderRadius: BorderRadius.circular(16),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: AppTheme.limeGreen.withOpacity(0.3),
+                                      color: const Color(0xFF4DB6E8).withOpacity(0.3),
                                       blurRadius: 8,
                                       offset: const Offset(0, 2),
                                     ),
@@ -668,13 +674,13 @@ class _VoyageCardState extends State<_VoyageCard> {
                                     Text(
                                       'Voir l\'itinéraire',
                                       style: TextStyle(
-                                        color: Color(0xFF0F1B2D),
+                                        color: Colors.white,
                                         fontSize: 14,
                                         fontWeight: FontWeight.w700,
                                       ),
                                     ),
                                     SizedBox(width: 6),
-                                    Icon(Icons.arrow_forward_rounded, color: Color(0xFF0F1B2D), size: 16),
+                                    Icon(Icons.arrow_forward_rounded, color: Colors.white, size: 16),
                                   ],
                                 ),
                               ),

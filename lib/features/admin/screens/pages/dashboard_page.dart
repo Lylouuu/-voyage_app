@@ -162,8 +162,9 @@ class _DashboardPageState extends State<DashboardPage> {
               builder: (p) => _RecentTile(
                 title: p['nom'] ?? '',
                 subtitle: p['continent'] ?? '',
-                leading: Icons.flag_rounded,
+                leading: Icons.public_rounded,
                 color: AdminTheme.success,
+                imageUrl: _getCityImageUrl(p['nom'] ?? ''),
               ),
             ),
             const SizedBox(height: 24),
@@ -178,12 +179,62 @@ class _DashboardPageState extends State<DashboardPage> {
                 subtitle: v['pays']?['nom'] ?? '',
                 leading: Icons.location_on_rounded,
                 color: AdminTheme.info,
+                imageUrl: _getCityImageUrl(v['nom'] ?? ''),
               ),
             ),
           ],
         ),
       ),
     );
+  }
+
+
+
+  String? _getCityImageUrl(String villeNom) {
+    final nom = villeNom.toLowerCase().trim();
+    if (nom.isEmpty) return null;
+    
+    // Mapping pour les traductions anglaises utilisées dans l'URL loremflickr
+    final traductions = {
+      'valence': 'valencia,spain',
+      'grenade': 'granada,spain',
+      'alger': 'algiers,algeria',
+      'lyon': 'lyon,france',
+      'bangkok': 'bangkok,thailand',
+      'madrid': 'madrid,spain',
+      'mont saint-michel': 'mont-saint-michel,france',
+      'mont saint michel': 'mont-saint-michel,france',
+      'tlemcen': 'tlemcen,algeria',
+      'bali': 'bali,indonesia',
+      'seville': 'seville,spain',
+      'séville': 'seville,spain',
+      'nice': 'nice,france',
+      'bejaia': 'bejaia,algeria',
+      'béjaïa': 'bejaia,algeria',
+      'rome': 'rome,italy',
+      'tokyo': 'tokyo,japan',
+      'marrakech': 'marrakech,morocco',
+      'bordeaux': 'bordeaux,france',
+      'constantine': 'constantine,algeria',
+      'oran': 'oran,algeria',
+      'kyoto': 'kyoto,japan',
+      'istanbul': 'istanbul,turkey',
+      'bilbao': 'bilbao,spain',
+      'malé': 'male,maldives',
+      'male': 'male,maldives',
+      'paris': 'paris,france',
+      'tamanrasset': 'tamanrasset,algeria',
+      'marseille': 'marseille,france',
+      'maroc': 'morocco',
+      'espagne': 'spain',
+      'algérie': 'algeria',
+      'france': 'france',
+      'italie': 'italy',
+      'japon': 'japan',
+    };
+    
+    final query = traductions[nom] ?? nom;
+    return 'https://loremflickr.com/800/600/$query,city?lock=1';
   }
 
   // ═══════════════════════════════════════════════════════════════
@@ -832,6 +883,7 @@ class _RecentTile extends StatelessWidget {
   final IconData leading;
   final Color color;
   final String? trailing;
+  final String? imageUrl;
 
   const _RecentTile({
     required this.title,
@@ -839,6 +891,7 @@ class _RecentTile extends StatelessWidget {
     required this.leading,
     required this.color,
     this.trailing,
+    this.imageUrl,
   });
 
   @override
@@ -852,15 +905,19 @@ class _RecentTile extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
+          if (imageUrl != null)
+            ClipRRect(
               borderRadius: AdminTheme.radiusSm,
-            ),
-            child: Icon(leading, color: color, size: 20),
-          ),
+              child: Image.network(
+                imageUrl!,
+                width: 40,
+                height: 40,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) => _buildIconContainer(),
+              ),
+            )
+          else
+            _buildIconContainer(),
           const SizedBox(width: 16),
           Expanded(
             child: Column(
@@ -896,6 +953,18 @@ class _RecentTile extends StatelessWidget {
              ),
         ],
       ),
+    );
+  }
+
+  Widget _buildIconContainer() {
+    return Container(
+      width: 40,
+      height: 40,
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: AdminTheme.radiusSm,
+      ),
+      child: Icon(leading, color: color, size: 20),
     );
   }
 }

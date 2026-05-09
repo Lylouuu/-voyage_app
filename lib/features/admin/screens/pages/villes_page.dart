@@ -157,58 +157,261 @@ class _VillesPageState extends State<VillesPage> {
     }
   }
 
+  String _getImageForCity(Map<String, dynamic> v) {
+    if (v['image_url'] != null && (v['image_url'] as String).isNotEmpty) {
+      return v['image_url'];
+    }
+    
+    final nom = (v['nom'] ?? '').toLowerCase().trim();
+    
+    // Mapping pour les traductions anglaises
+    final traductions = {
+      'valence': 'valencia,spain',
+      'grenade': 'granada,spain',
+      'alger': 'algiers,algeria',
+      'lyon': 'lyon,france',
+      'bangkok': 'bangkok,thailand',
+      'madrid': 'madrid,spain',
+      'mont saint-michel': 'mont-saint-michel,france',
+      'mont saint michel': 'mont-saint-michel,france',
+      'tlemcen': 'tlemcen,algeria',
+      'bali': 'bali,indonesia',
+      'seville': 'seville,spain',
+      'séville': 'seville,spain',
+      'nice': 'nice,france',
+      'bejaia': 'bejaia,algeria',
+      'béjaïa': 'bejaia,algeria',
+      'rome': 'rome,italy',
+      'tokyo': 'tokyo,japan',
+      'marrakech': 'marrakech,morocco',
+      'bordeaux': 'bordeaux,france',
+      'constantine': 'constantine,algeria',
+      'oran': 'oran,algeria',
+      'kyoto': 'kyoto,japan',
+      'istanbul': 'istanbul,turkey',
+      'bilbao': 'bilbao,spain',
+      'malé': 'male,maldives',
+      'male': 'male,maldives',
+      'paris': 'paris,france',
+      'tamanrasset': 'tamanrasset,algeria',
+      'marseille': 'marseille,france',
+    };
+    
+    final query = traductions[nom] ?? nom;
+    return 'https://loremflickr.com/800/600/$query,city?lock=1';
+  }
+
   @override
   Widget build(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.all(16),
+    return Column(
       children: [
-        AdminDataTable(
-          title: 'Gestion des villes',
-          subtitle: '${_villes.length} villes enregistrées',
-          addLabel: 'Ajouter une ville',
-          onAdd: () => _showFormDialog(),
-          searchController: _searchController,
-          onSearch: (v) => _loadData(search: v),
-          isLoading: _loading,
-          columns: const ['Nom', 'Pays', 'Budget', 'Popularité', 'Température', 'Actions'],
-          rows: _villes.map((v) => DataRow(cells: [
-            DataCell(Row(children: [
-              if (v['image_url'] != null && (v['image_url'] as String).isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.only(right: 10),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(6),
-                    child: Image.network(v['image_url'], width: 36, height: 36, fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => Container(width: 36, height: 36, color: AdminTheme.surfaceLight, child: const Icon(Icons.image, size: 16, color: AdminTheme.textMuted))),
+        // ── EN-TÊTE ET RECHERCHE ──
+        Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: AdminTheme.surface,
+            border: Border(bottom: BorderSide(color: AdminTheme.surfaceBorder)),
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _searchController,
+                  onChanged: (v) => _loadData(search: v),
+                  decoration: InputDecoration(
+                    hintText: 'Rechercher une ville...',
+                    prefixIcon: const Icon(Icons.search_rounded, color: AdminTheme.textMuted),
+                    filled: true,
+                    fillColor: AdminTheme.background,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: BorderSide.none,
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                   ),
                 ),
-              Text(v['nom'] ?? '', style: const TextStyle(fontWeight: FontWeight.w500)),
-            ])),
-            DataCell(Text(v['pays']?['nom'] ?? '-')),
-            DataCell(_BudgetBadge(level: v['niveau_budget'] ?? '-')),
-            DataCell(Row(children: [
-              const Icon(Icons.star_rounded, color: AdminTheme.warning, size: 16),
-              const SizedBox(width: 4),
-              Text('${v['popularite'] ?? '-'}'),
-            ])),
-            DataCell(Text(v['temperature'] ?? '-')),
-            DataCell(AdminActionButtons(
-              onEdit: () => _showFormDialog(existing: v),
-              onDelete: () => _deleteVille(v),
-            )),
-          ])).toList(),
+              ),
+              const SizedBox(width: 16),
+              ElevatedButton.icon(
+                onPressed: () => _showFormDialog(),
+                icon: const Icon(Icons.add_rounded),
+                label: const Text('Nouvelle Ville'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AdminTheme.accent,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                ),
+              ),
+            ],
+          ),
+        ),
+        
+        // ── GRILLE DE VILLES ──
+        Expanded(
+          child: _loading
+              ? const Center(child: CircularProgressIndicator(color: AdminTheme.accent))
+              : _villes.isEmpty
+                  ? const Center(child: Text('Aucune ville trouvée', style: AdminTheme.headingMd))
+                  : GridView.builder(
+                      padding: const EdgeInsets.all(24),
+                      gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                        maxCrossAxisExtent: 350,
+                        childAspectRatio: 0.85,
+                        crossAxisSpacing: 20,
+                        mainAxisSpacing: 20,
+                      ),
+                      itemCount: _villes.length,
+                      itemBuilder: (context, index) {
+                        final v = _villes[index];
+                        final imageUrl = _getImageForCity(v);
+                        
+                        return Container(
+                          decoration: BoxDecoration(
+                            borderRadius: AdminTheme.radiusLg,
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.15),
+                                blurRadius: 15,
+                                offset: const Offset(0, 8),
+                              ),
+                            ],
+                          ),
+                          child: ClipRRect(
+                            borderRadius: AdminTheme.radiusLg,
+                            child: Stack(
+                              fit: StackFit.expand,
+                              children: [
+                                // Image de fond
+                                Image.network(
+                                  imageUrl,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (_, __, ___) => Container(color: AdminTheme.surfaceLight),
+                                ),
+                                
+                                // Dégradé sombre
+                                Container(
+                                  decoration: BoxDecoration(
+                                    gradient: LinearGradient(
+                                      begin: Alignment.topCenter,
+                                      end: Alignment.bottomCenter,
+                                      colors: [
+                                        Colors.black.withOpacity(0.1),
+                                        Colors.black.withOpacity(0.85),
+                                      ],
+                                      stops: const [0.3, 1.0],
+                                    ),
+                                  ),
+                                ),
+                                
+                                // Contenu de la carte
+                                Padding(
+                                  padding: const EdgeInsets.all(20),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      // Boutons d'action (haut)
+                                      Row(
+                                        mainAxisAlignment: MainAxisAlignment.end,
+                                        children: [
+                                          _buildGlassIconButton(Icons.edit_rounded, () => _showFormDialog(existing: v)),
+                                          const SizedBox(width: 8),
+                                          _buildGlassIconButton(Icons.delete_rounded, () => _deleteVille(v), isDanger: true),
+                                        ],
+                                      ),
+                                      
+                                      const Spacer(),
+                                      
+                                      // Badges
+                                      Wrap(
+                                        spacing: 6,
+                                        runSpacing: 6,
+                                        children: [
+                                          _buildBadge(v['pays']?['nom'] ?? 'Inconnu', Icons.public_rounded, AdminTheme.accent),
+                                          _buildBudgetBadge(v['niveau_budget'] ?? 'Moyen'),
+                                          _buildBadge('${v['popularite'] ?? '4.0'}/5', Icons.star_rounded, AdminTheme.warning),
+                                        ],
+                                      ),
+                                      
+                                      const SizedBox(height: 12),
+                                      
+                                      // Titre
+                                      Text(
+                                        v['nom'] ?? 'Inconnue',
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 24,
+                                          fontWeight: FontWeight.w800,
+                                          height: 1.1,
+                                        ),
+                                      ),
+                                      
+                                      if (v['temperature'] != null && v['temperature'].toString().isNotEmpty) ...[
+                                        const SizedBox(height: 6),
+                                        Text(
+                                          'Climat : ${v['temperature']}',
+                                          style: const TextStyle(
+                                            color: Colors.white70,
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                      ],
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
         ),
       ],
     );
   }
-}
 
-class _BudgetBadge extends StatelessWidget {
-  final String level;
-  const _BudgetBadge({required this.level});
+  Widget _buildGlassIconButton(IconData icon, VoidCallback onTap, {bool isDanger = false}) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: isDanger ? AdminTheme.danger.withOpacity(0.8) : Colors.white.withOpacity(0.2),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.white.withOpacity(0.3)),
+          ),
+          child: Icon(icon, color: Colors.white, size: 18),
+        ),
+      ),
+    );
+  }
 
-  @override
-  Widget build(BuildContext context) {
+  Widget _buildBadge(String text, IconData icon, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.95),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: Colors.white, size: 12),
+          const SizedBox(width: 4),
+          Text(
+            text,
+            style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBudgetBadge(String level) {
     Color color;
     switch (level) {
       case 'Faible': color = AdminTheme.success; break;
@@ -216,13 +419,6 @@ class _BudgetBadge extends StatelessWidget {
       case 'Élevé': color = AdminTheme.danger; break;
       default: color = AdminTheme.textMuted;
     }
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: AdminTheme.radiusSm,
-      ),
-      child: Text(level, style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.w500)),
-    );
+    return _buildBadge(level, Icons.euro_rounded, color);
   }
 }

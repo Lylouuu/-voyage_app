@@ -64,7 +64,7 @@ class _FavorisScreenState extends State<FavorisScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.darkNavy,
+      backgroundColor: const Color(0xFFF4F9FF),
       body: Stack(
         children: [
           // Background Gradient
@@ -74,9 +74,8 @@ class _FavorisScreenState extends State<FavorisScreen> {
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
                 colors: [
-                  Color(0xFF0F1B2D),
-                  Color(0xFF0A1628),
-                  Color(0xFF0D1F3C), // Slight depth
+                  Color(0xFFF4F9FF),
+                  Color(0xFFEBF5FB),
                 ],
               ),
             ),
@@ -122,11 +121,13 @@ class _FavorisScreenState extends State<FavorisScreen> {
                     child: Container(
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.08),
+                        color: Colors.white,
                         borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: Colors.white.withOpacity(0.1)),
+                        boxShadow: [
+                          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4)),
+                        ],
                       ),
-                      child: Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white.withOpacity(0.9), size: 18),
+                      child: const Icon(Icons.arrow_back_ios_new_rounded, color: Color(0xFF4A6580), size: 18),
                     ),
                   ),
                 ),
@@ -164,14 +165,14 @@ class _FavorisScreenState extends State<FavorisScreen> {
                         style: TextStyle(
                           fontSize: 32,
                           fontWeight: FontWeight.bold,
-                          color: Colors.white,
+                          color: Color(0xFF0A192F),
                           letterSpacing: -0.5,
                         ),
                       ),
                       const SizedBox(height: 2),
                       Text(
                         '${_favoris.length} destinations enregistrées',
-                        style: TextStyle(fontSize: 14, color: Colors.white.withOpacity(0.7)),
+                        style: const TextStyle(fontSize: 14, color: Color(0xFF4A6580)),
                       ),
                     ],
                   ),
@@ -193,10 +194,13 @@ class _FavorisScreenState extends State<FavorisScreen> {
             Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.05),
+                color: Colors.white,
                 shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4)),
+                ],
               ),
-              child: Icon(Icons.favorite_border_rounded, size: 60, color: Colors.white.withOpacity(0.2)),
+              child: const Icon(Icons.favorite_border_rounded, size: 60, color: Color(0xFF4DB6E8)),
             ),
             const SizedBox(height: 24),
             const Text(
@@ -204,14 +208,14 @@ class _FavorisScreenState extends State<FavorisScreen> {
               style: TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
-                color: Colors.white,
+                color: Color(0xFF0A192F),
               ),
             ),
             const SizedBox(height: 8),
-            Text(
+            const Text(
               'Ajoutez des destinations pour les\nretrouver facilement ici.',
               textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 14, height: 1.4),
+              style: TextStyle(color: Color(0xFF4A6580), fontSize: 14, height: 1.4),
             ),
             const SizedBox(height: 32),
             GestureDetector(
@@ -219,11 +223,15 @@ class _FavorisScreenState extends State<FavorisScreen> {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
                 decoration: BoxDecoration(
-                  color: AppTheme.limeGreen,
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF4DB6E8), Color(0xFF1A7EC8)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(
-                      color: AppTheme.limeGreen.withOpacity(0.3),
+                      color: const Color(0xFF4DB6E8).withOpacity(0.3),
                       blurRadius: 12,
                       offset: const Offset(0, 4),
                     ),
@@ -232,7 +240,7 @@ class _FavorisScreenState extends State<FavorisScreen> {
                 child: const Text(
                   'Explorer les destinations',
                   style: TextStyle(
-                    color: Color(0xFF0F1B2D),
+                    color: Colors.white,
                     fontSize: 15,
                     fontWeight: FontWeight.bold,
                   ),
@@ -319,12 +327,12 @@ class _PremiumDestCardSmallState extends State<_PremiumDestCardSmall> {
         child: Container(
           height: 130, // Horizontal card
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.05),
+            color: Colors.white,
             borderRadius: BorderRadius.circular(22),
-            border: Border.all(color: Colors.white.withOpacity(0.08)),
+            border: Border.all(color: const Color(0xFF4DB6E8).withOpacity(0.1)),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.2),
+                color: Colors.black.withOpacity(0.06),
                 blurRadius: 16,
                 offset: const Offset(0, 8),
               ),
@@ -343,7 +351,7 @@ class _PremiumDestCardSmallState extends State<_PremiumDestCardSmall> {
                       topLeft: Radius.circular(22),
                       bottomLeft: Radius.circular(22),
                     ),
-                    color: Colors.white.withOpacity(0.1),
+                    color: const Color(0xFFEBF5FB),
                   ),
                   child: ClipRRect(
                     borderRadius: const BorderRadius.only(
@@ -354,8 +362,8 @@ class _PremiumDestCardSmallState extends State<_PremiumDestCardSmall> {
                         ? CachedNetworkImage(
                             imageUrl: imageUrl,
                             fit: BoxFit.cover,
-                            placeholder: (_, __) => const Center(child: CircularProgressIndicator(color: AppTheme.limeGreen, strokeWidth: 2)),
-                            errorWidget: (_, __, ___) => Icon(Icons.image_outlined, color: Colors.white.withOpacity(0.3)),
+                            placeholder: (_, __) => const Center(child: CircularProgressIndicator(color: Color(0xFF4DB6E8), strokeWidth: 2)),
+                            errorWidget: (_, __, ___) => const Icon(Icons.image_outlined, color: Color(0xFF4DB6E8)),
                           )
                         : null,
                   ),
@@ -382,7 +390,7 @@ class _PremiumDestCardSmallState extends State<_PremiumDestCardSmall> {
                                   style: const TextStyle(
                                     fontSize: 18,
                                     fontWeight: FontWeight.bold,
-                                    color: Colors.white,
+                                    color: Color(0xFF0A192F),
                                     height: 1.1,
                                   ),
                                   maxLines: 1,
@@ -391,14 +399,14 @@ class _PremiumDestCardSmallState extends State<_PremiumDestCardSmall> {
                                 const SizedBox(height: 4),
                                 Row(
                                   children: [
-                                    Icon(Icons.location_on_rounded, color: Colors.white.withOpacity(0.6), size: 12),
+                                    const Icon(Icons.location_on_rounded, color: Color(0xFF4A6580), size: 12),
                                     const SizedBox(width: 4),
                                     Expanded(
                                       child: Text(
                                         pays,
-                                        style: TextStyle(
+                                        style: const TextStyle(
                                           fontSize: 12,
-                                          color: Colors.white.withOpacity(0.6),
+                                          color: Color(0xFF4A6580),
                                           fontWeight: FontWeight.w500,
                                         ),
                                         maxLines: 1,
@@ -451,7 +459,7 @@ class _PremiumDestCardSmallState extends State<_PremiumDestCardSmall> {
                           Text(
                             pop,
                             style: const TextStyle(
-                              color: Colors.white,
+                              color: Color(0xFF0A192F),
                               fontSize: 12,
                               fontWeight: FontWeight.w700,
                             ),
